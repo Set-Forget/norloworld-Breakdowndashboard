@@ -19,13 +19,15 @@ const endPoint =
 export default function FilteredTable() {
   const [{ data: dataTypes, loading: typeLoading, error: TypeError }] =
     useAxios(endPoint);
-  const [{ data, loading, error }] = useAxios(endPoint);
+  const [{ data, loading, error }] = useAxios(
+    endPoint + "?route=getBreakdowns"
+  );
   const [
     { data: postData, loading: postLoading, error: postError },
     executePost,
   ] = useAxios(
     {
-      url: endPoint + "?route=editBreakdown",
+      url: endPoint,
       method: "POST",
     },
     { manual: true }
@@ -70,13 +72,28 @@ export default function FilteredTable() {
 
       console.log("Guardado exitoso para la fila con id:", id);
 
-   executePost({
-        data: JSON.stringify(updatedData[id]),
+      const body = {
+        breakdownDate: updatedData[id]["Breakdown Date"],
+        city: updatedData[id].City,
+        driverName: updatedData[id]["Driver Name"],
+        repairCategory: updatedData[id]["Repair Category"],
+        repairNeeded: updatedData[id]["Repair Needed"],
+        repairSubCategory: updatedData[id]["Repair SubCategory"],
+        serviceProvider : updatedData[id]['Service Provider'],
+        state: updatedData[id].State,
+        status: updatedData[id].Status,
+        sumbittedBy: updatedData[id]["Sumbitted By"],
+        total: updatedData[id].Total,
+        trailer: updatedData[id]["Trailer #"],
+        truck: updatedData[id]["Truck #"],
+        rowIndex: updatedData[id].rowIndex,
+      };
+
+      executePost({
+        data: JSON.stringify(body),
       });
     }
-
   };
-
   useEffect(() => {
     if (data) {
       const dataWithRowIndices = data.breakDowns.map((item, index) => ({

@@ -30,13 +30,6 @@ export default function MainForm() {
   const [{ data, loading, error }] = useAxios(
     endPoint + '?route=getIncidentTypes'
   )
-  const [{ data: postData, loading: postLoading, error: postError }, executePost] = useAxios(
-    {
-      url: endPoint + '?route=createIncident',
-      method: 'POST',
-    },
-    { manual: true },
-  );
 
   const handleFileChange = async (event) => {
     const myFile = event.target.files[0];
