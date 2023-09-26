@@ -79,10 +79,10 @@ export default function FilteredTable() {
         repairCategory: updatedData[id]["Repair Category"],
         repairNeeded: updatedData[id]["Repair Needed"],
         repairSubCategory: updatedData[id]["Repair SubCategory"],
-        serviceProvider : updatedData[id]['Service Provider'],
+        serviceProvider: updatedData[id]["Service Provider"],
         state: updatedData[id].State,
         status: updatedData[id].Status,
-        sumbittedBy: updatedData[id]["Sumbitted By"],
+        sumbittedBy: updatedData[id]["Sumbitted by"],
         total: updatedData[id].Total,
         trailer: updatedData[id]["Trailer #"],
         truck: updatedData[id]["Truck #"],
@@ -94,6 +94,9 @@ export default function FilteredTable() {
       });
     }
   };
+  const [selectedCategory, setSelectedCategory] = useState("");
+  const [selectedSubcategory, setSelectedSubcategory] = useState("");
+
   useEffect(() => {
     if (data) {
       const dataWithRowIndices = data.breakDowns.map((item, index) => ({
@@ -115,8 +118,17 @@ export default function FilteredTable() {
     }
   }, [data]);
 
-  console.log(categoriesAndSubcategories);
   if (loading || typeLoading) return <Spinner />;
+
+  const handleCategoryChange = (e) => {
+    const newCategory = e.target.value;
+    setSelectedCategory(newCategory);
+  
+    setSelectedSubcategory("");
+  };
+
+  console.log(categoriesAndSubcategories);
+
 
   const columns = [
     {
@@ -125,7 +137,7 @@ export default function FilteredTable() {
       width: 200,
       editable: true,
       renderCell: (params) => {
-        return <div>{dayjs(params.value).format("MM-DD-YYYY")}</div>;
+        return <div>{dayjs(params.value).format("YYYY-MM-DD")}</div>;
       },
       renderEditCell: (params) => {
         const id = params.id;
@@ -353,7 +365,7 @@ export default function FilteredTable() {
         const id = params.id;
         return (
           <Select
-            value={editStates[id]?.["Repair Category"] || params.value || ""}
+            value={editStates[id]?.["Repair Category"] || params.value}
             onChange={(e) => {
               const updatedEditStates = { ...editStates };
               updatedEditStates[id] = {
@@ -361,6 +373,9 @@ export default function FilteredTable() {
                 "Repair Category": e.target.value,
               };
               setEditStates(updatedEditStates);
+              
+              // Actualizar las subcategorías cuando cambia la categoría
+              setSelectedSubcategory("");
             }}
           >
             {Object.keys(categoriesAndSubcategories).map((category, index) => (
@@ -379,9 +394,11 @@ export default function FilteredTable() {
       editable: true,
       renderEditCell: (params) => {
         const id = params.id;
+        const category = editStates[id]?.["Repair Category"] || selectedCategory;
+        
         return (
           <Select
-            value={editStates[id]?.["Repair SubCategory"] || params.value || ""}
+            value={editStates[id]?.["Repair SubCategory"] || selectedSubcategory}
             onChange={(e) => {
               const updatedEditStates = { ...editStates };
               updatedEditStates[id] = {
@@ -391,9 +408,7 @@ export default function FilteredTable() {
               setEditStates(updatedEditStates);
             }}
           >
-            {categoriesAndSubcategories[
-              editStates[id]?.["Repair Category"]
-            ]?.map((name, index) => (
+            {categoriesAndSubcategories[category]?.map((name, index) => (
               <MenuItem key={index} value={name}>
                 {name}
               </MenuItem>
@@ -428,7 +443,7 @@ export default function FilteredTable() {
       },
     },
     {
-      field: "Sumbitted By",
+      field: "Sumbitted by",
       headerName: "Sumbitted By",
       width: 200,
       editable: true,
@@ -439,12 +454,12 @@ export default function FilteredTable() {
         const id = params.id;
         return (
           <Select
-            value={editStates[id]?.["Sumbitted By"] || params.value || ""}
+            value={editStates[id]?.["Sumbitted by"] || params.value || ""}
             onChange={(e) => {
               const updatedEditStates = { ...editStates };
               updatedEditStates[id] = {
                 ...updatedEditStates[id],
-                "Sumbitted By": e.target.value,
+                "Sumbitted by": e.target.value,
               };
               setEditStates(updatedEditStates);
             }}
@@ -523,13 +538,12 @@ export default function FilteredTable() {
           <div className="inline-block min-w-full py-2 align-middle sm:px-6 lg:px-8">
             <div className="overflow-hidden shadow ring-1 ring-black ring-opacity-5 sm:rounded-lg">
               <DataGrid
-                key={gridKey} // Agregamos una clave para forzar la actualización
+                key={gridKey}
                 rows={filteredData}
                 getRowId={(row) => row.rowIndex}
                 columns={columns}
                 pageSize={5}
                 rowsPerPageOptions={[5]}
-                checkboxSelection
                 disableSelectionOnClick
                 editMode="row"
                 rowModesModel={rowModesModel}
