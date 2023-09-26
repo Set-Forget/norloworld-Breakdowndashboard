@@ -110,6 +110,7 @@ export default function FilteredTable() {
       const initialEditStates = {};
       dataWithRowIndices.forEach((row, index) => {
         initialEditStates[index] = {
+          "Breakdown Date": row["BreakDown Date"],
           "Repair Category": row["Repair Category"],
           "Repair SubCategory": row["Repair SubCategory"],
         };
@@ -127,12 +128,12 @@ export default function FilteredTable() {
     setSelectedSubcategory("");
   };
 
-  console.log(categoriesAndSubcategories);
+  console.log(data);
 
 
   const columns = [
     {
-      field: "Breakdown Date",
+      field: "BreakDown Date",
       headerName: "Breakdown Date",
       width: 200,
       editable: true,
@@ -141,25 +142,34 @@ export default function FilteredTable() {
       },
       renderEditCell: (params) => {
         const id = params.id;
-        const value = editStates[id]?.["Breakdown Date"] || params.value || "";
+        const value = dayjs(editStates[id]?.["BreakDown Date"] || params.value).format("YYYY-MM-DD");
         const isValidDate = (dateString) => {
           return !!dayjs(dateString, "YYYY-MM-DD", true).isValid();
         };
         const handleDateChange = (e) => {
           const newValue = e.target.value;
-
+      
           if (isValidDate(newValue)) {
             const updatedEditStates = { ...editStates };
             updatedEditStates[id] = {
               ...updatedEditStates[id],
-              "Breakdown Date": newValue,
+              "BreakDown Date": newValue,
             };
             setEditStates(updatedEditStates);
           }
         };
-
+      
         return (
-          <TextField type="date" value={value} onChange={handleDateChange} />
+          <TextField
+            type="date"
+            value={value}
+            onChange={handleDateChange}
+            InputProps={{
+              inputProps: {
+                max: dayjs().format("YYYY-MM-DD"), // Optional: set max date if needed
+              },
+            }}
+          />
         );
       },
     },
