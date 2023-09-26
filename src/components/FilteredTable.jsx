@@ -73,7 +73,7 @@ export default function FilteredTable() {
       console.log("Guardado exitoso para la fila con id:", id);
 
       const body = {
-        breakdownDate: updatedData[id]["Breakdown Date"],
+        breakdownDate: updatedData[id]["BreakDown Date"],
         city: updatedData[id].City,
         driverName: updatedData[id]["Driver Name"],
         repairCategory: updatedData[id]["Repair Category"],
