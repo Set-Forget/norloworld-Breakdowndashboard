@@ -41,6 +41,12 @@ export default function FilteredTable() {
   );
 
   const handleEditClick = (id) => () => {
+    const category = filteredData[id]["Repair Category"];
+    const subcategory = filteredData[id]["Repair SubCategory"];
+  
+    setSelectedCategory(category);
+    setSelectedSubcategory(subcategory);
+  
     setRowModesModel({ ...rowModesModel, [id]: { mode: GridRowModes.Edit } });
   };
 
@@ -118,6 +124,8 @@ export default function FilteredTable() {
       setEditStates(initialEditStates);
     }
   }, [data]);
+
+  
 
   if (loading || typeLoading) return <Spinner />;
 
