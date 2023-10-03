@@ -43,10 +43,10 @@ export default function FilteredTable() {
   const handleEditClick = (id) => () => {
     const category = filteredData[id]["Repair Category"];
     const subcategory = filteredData[id]["Repair SubCategory"];
-  
+
     setSelectedCategory(category);
     setSelectedSubcategory(subcategory);
-  
+
     setRowModesModel({ ...rowModesModel, [id]: { mode: GridRowModes.Edit } });
   };
 
@@ -88,13 +88,18 @@ export default function FilteredTable() {
         serviceProvider: updatedData[id]["Service Provider"],
         state: updatedData[id].State,
         status: updatedData[id].Status,
-        sumbittedBy: updatedData[id]["Sumbitted by"],
+        sumbittedBy: updatedData[id]["Submitted by Dashboard"],
         total: updatedData[id].Total,
         trailer: updatedData[id]["Trailer #"],
         truck: updatedData[id]["Truck #"],
         rowIndex: updatedData[id].rowIndex,
+        ETA: updatedData[id]["ETA"],
+        onLocation: updatedData[id]["On-Location"],
+        complete: updatedData[id]["Complete"]
+
       };
 
+      console.log("body" + body)
       executePost({
         data: JSON.stringify(body),
       });
@@ -125,14 +130,14 @@ export default function FilteredTable() {
     }
   }, [data]);
 
-  
+
 
   if (loading || typeLoading) return <Spinner />;
 
   const handleCategoryChange = (e) => {
     const newCategory = e.target.value;
     setSelectedCategory(newCategory);
-  
+
     setSelectedSubcategory("");
   };
 
@@ -156,7 +161,7 @@ export default function FilteredTable() {
         };
         const handleDateChange = (e) => {
           const newValue = e.target.value;
-      
+
           if (isValidDate(newValue)) {
             const updatedEditStates = { ...editStates };
             updatedEditStates[id] = {
@@ -166,7 +171,7 @@ export default function FilteredTable() {
             setEditStates(updatedEditStates);
           }
         };
-      
+
         return (
           <TextField
             type="date"
@@ -328,6 +333,13 @@ export default function FilteredTable() {
       },
       renderEditCell: (params) => {
         const id = params.id;
+        const selectedState = editStates[id]?.["State"];
+    
+        // Filtra los proveedores según el estado seleccionado
+        const filteredProviders = data.providers.filter(
+          provider => provider.State === selectedState
+        );
+    
         return (
           <Select
             value={editStates[id]?.["Service Provider"] || params.value || ""}
@@ -340,15 +352,15 @@ export default function FilteredTable() {
               setEditStates(updatedEditStates);
             }}
           >
-            {data.providers.map((name, index) => (
-              <MenuItem key={index} value={name}>
-                {name}
+            {filteredProviders.map((provider, index) => (
+              <MenuItem key={index} value={provider["Service Provider"]}>
+                {provider["Service Provider"]}  {/* Aquí está la corrección */}
               </MenuItem>
             ))}
           </Select>
         );
       },
-    },
+    },    
     {
       field: "Repair Needed",
       headerName: "Repair Needed",
@@ -391,7 +403,7 @@ export default function FilteredTable() {
                 "Repair Category": e.target.value,
               };
               setEditStates(updatedEditStates);
-              
+
               // Actualizar las subcategorías cuando cambia la categoría
               setSelectedSubcategory("");
             }}
@@ -413,7 +425,7 @@ export default function FilteredTable() {
       renderEditCell: (params) => {
         const id = params.id;
         const category = editStates[id]?.["Repair Category"] || selectedCategory;
-        
+
         return (
           <Select
             value={editStates[id]?.["Repair SubCategory"] || selectedSubcategory}
@@ -461,7 +473,7 @@ export default function FilteredTable() {
       },
     },
     {
-      field: "Sumbitted by",
+      field: "Submitted by Dashboard",
       headerName: "Sumbitted By",
       width: 200,
       editable: true,
@@ -472,12 +484,12 @@ export default function FilteredTable() {
         const id = params.id;
         return (
           <Select
-            value={editStates[id]?.["Sumbitted by"] || params.value || ""}
+            value={editStates[id]?.["Submitted by Dashboard"] || params.value || ""}
             onChange={(e) => {
               const updatedEditStates = { ...editStates };
               updatedEditStates[id] = {
                 ...updatedEditStates[id],
-                "Sumbitted by": e.target.value,
+                "Submitted by Dashboard": e.target.value,
               };
               setEditStates(updatedEditStates);
             }}
@@ -492,13 +504,13 @@ export default function FilteredTable() {
       },
     },
     {
-      field: "Status",
-      headerName: "Status",
+      field: "ETA",
+      headerName: "ETA",
       width: 200,
       editable: true,
       renderEditCell: (params) => {
         const id = params.id;
-        const value = editStates[id]?.["Status"] || params.value || "";
+        const value = editStates[id]?.["ETA"] || params.value || "";
 
         return (
           <CustomTextFieldEditor
@@ -508,7 +520,7 @@ export default function FilteredTable() {
               const updatedEditStates = { ...editStates };
               updatedEditStates[id] = {
                 ...updatedEditStates[id],
-                Status: newValue,
+                ETA: newValue, // Aquí se corrigió el error
               };
               setEditStates(updatedEditStates);
             }}
@@ -516,6 +528,61 @@ export default function FilteredTable() {
         );
       },
     },
+    {
+      field: "On-Location",
+      headerName: "On-Location",
+      width: 200,
+      editable: true,
+      renderEditCell: (params) => {
+        const id = params.id;
+        const value = editStates[id]?.["On-Location"] || params.value || "";
+
+        return (
+          <Select
+            value={value}
+            onChange={(e) => {
+              const updatedEditStates = { ...editStates };
+              updatedEditStates[id] = {
+                ...updatedEditStates[id],
+                "On-Location": e.target.value,
+              };
+              setEditStates(updatedEditStates);
+            }}
+          >
+            <MenuItem value="Arrived">Arrived</MenuItem>
+          </Select>
+        );
+      },
+    },
+    {
+      field: "Complete",
+      headerName: "Complete",
+      width: 200,
+      editable: true,
+      renderEditCell: (params) => {
+        const id = params.id;
+        const value = editStates[id]?.["Complete"] || params.value || "";
+
+        return (
+          <Select
+            value={value}
+            onChange={(e) => {
+              const updatedEditStates = { ...editStates };
+              updatedEditStates[id] = {
+                ...updatedEditStates[id],
+                Complete: e.target.value,
+              };
+              setEditStates(updatedEditStates);
+            }}
+          >
+            <MenuItem value="Fixed">Fixed</MenuItem>
+            <MenuItem value="Paid">Paid</MenuItem>
+            <MenuItem value="Complete">Complete</MenuItem>
+          </Select>
+        );
+      },
+    }
+    ,
     {
       field: "actions",
       type: "actions",
