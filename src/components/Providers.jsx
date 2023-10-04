@@ -109,9 +109,6 @@ export default function providers() {
     const handleCellChange = (params) => {
         const { id, field, props } = params;
         const value = props.value;
-
-        console.log(`Cell changed: ${id}, ${field}, ${value}`);  // Añadir esta línea
-
         setEditStates((prevEditStates) => ({
             ...prevEditStates,
             [id]: {
