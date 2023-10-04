@@ -27,7 +27,7 @@ export default function FilteredTable() {
     executePost,
   ] = useAxios(
     {
-      url: endPoint,
+      url: endPoint + "?route=editBreakdowns",
       method: "POST",
     },
     { manual: true }
