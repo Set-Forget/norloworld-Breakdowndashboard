@@ -37,11 +37,22 @@ export default function providers() {
     const [editStates, setEditStates] = useState({});
 
 
+    const [selectedState, setSelectedState] = useState("");
+    const [filteredProviders, setFilteredProviders] = useState([]);
+
     useEffect(() => {
         if (data && data.providers) {
             setproviders(data.providers);
         }
     }, [data]);
+
+    useEffect(() => {
+        if (selectedState && data.providers) {
+            const providersForState = data.providers.filter(provider => provider.State === selectedState);
+            setFilteredProviders(providersForState);
+        }
+    }, [selectedState, data]);
+
 
     const columns = [
         { field: 'Service Provider', headerName: 'Provider', width: 200 },
@@ -118,33 +129,37 @@ export default function providers() {
         }));
     };
 
-
     const handleSaveClick = (id) => () => {
         console.log(editStates);
-
+    
         const baseRow = providers.find((provider) => provider.rowIndex === id);
         const editsForThisRow = editStates[id] || {};
         const updatedRow = { ...baseRow, ...editsForThisRow };
-
+    
         if (updatedRow) {
             const body = {
                 editedData: updatedRow,
             };
-            console.log(body)
+            console.log(body);
             executePost({
                 data: JSON.stringify(body),
             })
                 .then((response) => {
-                    console.log(response)
                     if (response.status === 200) {
                         toast.success("Phone edited successfully");
-
+    
                         // Actualizar el estado local 'providers' con los datos editados
                         const updatedProviders = providers.map(provider =>
                             provider.rowIndex === id ? updatedRow : provider
                         );
                         setproviders(updatedProviders);
-
+    
+                        // Actualiza también 'filteredProviders'
+                        const updatedFilteredProviders = filteredProviders.map(provider =>
+                            provider.rowIndex === id ? updatedRow : provider
+                        );
+                        setFilteredProviders(updatedFilteredProviders);
+    
                     } else {
                         toast.error("Error");
                     }
@@ -152,10 +167,11 @@ export default function providers() {
                 .catch(() => {
                     toast.error("Error");
                 });
-
+    
             setRowModesModel({ ...rowModesModel, [id]: { mode: GridRowModes.View } });
         }
     };
+    
 
 
 
@@ -170,10 +186,18 @@ export default function providers() {
                     Complete the required fields *
                 </p>
             )}
+            <div className="flex justify-between space-x-4">
+                <ComboBox
+                    title="* Select State"
+                    items={data.providers.map((provider, i) => ({ id: i, name: provider.State }))}
+                    selectedPerson={{ name: selectedState }}
+                    setSelectedPerson={(selectedItem) => setSelectedState(selectedItem.name)}
+                />
+            </div>
             <ToastContainer />
             <div style={{ height: 400, width: '80%', display: 'flex', justifyContent: 'center' }}>
                 <DataGrid
-                    rows={providers}
+                    rows={filteredProviders}
                     columns={columns}
                     pageSize={5}
                     rowsPerPageOptions={[5, 10]}
