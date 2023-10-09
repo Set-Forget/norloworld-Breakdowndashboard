@@ -178,7 +178,7 @@ export default function providers() {
 
     if (loading) return <Spinner />;
     if (error) return <div>Error al obtener los datos: {error.message}</div>;
-
+    console.log(data)
     return (
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100vh' }}>
             {warning && (
@@ -189,7 +189,7 @@ export default function providers() {
             <div className="flex justify-between space-x-4">
                 <ComboBox
                     title="* Select State"
-                    items={data.providers.map((provider, i) => ({ id: i, name: provider.State }))}
+                    items={data.states.map((state, i) => ({ id: i, name: state }))}
                     selectedPerson={{ name: selectedState }}
                     setSelectedPerson={(selectedItem) => setSelectedState(selectedItem.name)}
                 />
