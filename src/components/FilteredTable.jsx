@@ -86,6 +86,7 @@ export default function FilteredTable() {
         repairNeeded: updatedData[id]["Repair Needed"],
         repairSubCategory: updatedData[id]["Repair SubCategory"],
         serviceProvider: updatedData[id]["Service Provider"],
+        phoneNumber: updatedData[id]["Phone Number"],
         state: updatedData[id].State,
         status: updatedData[id].Status,
         sumbittedBy: updatedData[id]["Submitted by Dashboard"],
@@ -99,7 +100,7 @@ export default function FilteredTable() {
 
       };
 
-      console.log("body" + body)
+      console.log("body", body)
       executePost({
         data: JSON.stringify(body),
       });
@@ -344,13 +345,19 @@ export default function FilteredTable() {
           <Select
             value={editStates[id]?.["Service Provider"] || params.value || ""}
             onChange={(e) => {
+              const selectedProvider = e.target.value;
+              const providerData = data.providers.find(provider => provider["Service Provider"] === selectedProvider);
+              const phoneNumber = providerData ? providerData['Phone Number'] : "";
+            
               const updatedEditStates = { ...editStates };
               updatedEditStates[id] = {
                 ...updatedEditStates[id],
-                "Service Provider": e.target.value,
+                "Service Provider": selectedProvider,
+                "Phone Number": phoneNumber  // Actualizar el número de teléfono aquí
               };
               setEditStates(updatedEditStates);
             }}
+            
           >
             {filteredProviders.map((provider, index) => (
               <MenuItem key={index} value={provider["Service Provider"]}>
@@ -360,7 +367,23 @@ export default function FilteredTable() {
           </Select>
         );
       },
-    },    
+    },
+    {
+      field: "Phone Number",
+      headerName: "Phone Number",
+      width: 200,
+      editable: false, // Esto asegura que la columna no sea editable
+      valueGetter: (params) => {
+        // Suponiendo que el array data.providers tiene una propiedad phoneNumber para cada proveedor
+        const selectedProvider = params.row["Service Provider"];
+        const providerData = data.providers.find(provider => provider["Service Provider"] === selectedProvider);
+        return providerData ? providerData['Phone Number'] : ""; // Devuelve el número de teléfono o una cadena vacía si no se encuentra
+      },
+      renderCell: (params) => {
+        return <div>{params.value}</div>;
+      },
+    },
+    
     {
       field: "Repair Needed",
       headerName: "Repair Needed",
