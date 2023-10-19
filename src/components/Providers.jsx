@@ -9,7 +9,7 @@ import "react-toastify/dist/ReactToastify.css";
 import SaveIcon from "@mui/icons-material/Save";
 import EditIcon from "@mui/icons-material/Edit";
 import CustomTextFieldEditor from "./customTextFieldEditor";
-import { Dialog, DialogTitle, DialogContent, TextField, Button } from '@mui/material';
+import { Dialog, DialogTitle, DialogContent, TextField, Button, Select, MenuItem } from '@mui/material';
 
 
 const endPoint =
@@ -245,6 +245,10 @@ export default function providers() {
             })
                 .then((response) => {
                     if (response.status === 200) {
+                        formData.provider = "";
+                        formData.state = "";
+                        formData.city = "";
+                        formData.phoneNumber = "";
                         toast.success("Provider Added");
                         setModalOpen(false);
                     } else {
@@ -285,7 +289,7 @@ export default function providers() {
                     </div>
                     <DialogContent>
                         <form>
-                            <div className="mb-4"> 
+                            <div className="mb-4">
                                 <TextField
                                     required
                                     error={providerError}
@@ -300,22 +304,33 @@ export default function providers() {
                                     }}
                                 />
                             </div>
-                            <div className="mb-4"> 
-                                <TextField
-                                    required
-                                    error={stateError}
-                                    helperText={stateError ? stateErrorText : ''}
-                                    name="state"
-                                    label="State"
-                                    value={formData.state}
-                                    onChange={handleFormChange}
-                                    color="success"
-                                    InputLabelProps={{
-                                        shrink: true,
-                                    }}
-                                />
+                            <div className="mb-4">
+                                <div style={{ width: '100%' }}>
+                                    <Select
+                                        required
+                                        error={stateError}
+                                        helperText={stateError ? stateErrorText : ''}
+                                        name="state"
+                                        value={formData.state}
+                                        onChange={handleFormChange}
+                                        color="success"
+                                        displayEmpty
+                                        inputProps={{ 'aria-label': 'Without label' }}
+                                        fullWidth  // Esto hará que el Select ocupe todo el ancho disponible
+                                    >
+                                        <MenuItem value="" disabled>
+                                            Select State
+                                        </MenuItem>
+                                        {data.states.map((state, i) => (
+                                            <MenuItem key={i} value={state}>
+                                                {state}
+                                            </MenuItem>
+                                        ))}
+                                    </Select>
+                                </div>
+
                             </div>
-                            <div className="mb-4"> 
+                            <div className="mb-4">
                                 <TextField
                                     required
                                     error={cityError}
@@ -330,7 +345,7 @@ export default function providers() {
                                     }}
                                 />
                             </div>
-                            <div className="mb-4"> 
+                            <div className="mb-4">
                                 <TextField
                                     required
                                     error={phoneNumberError}
