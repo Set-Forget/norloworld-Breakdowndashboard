@@ -5,7 +5,12 @@ export default {
     "./src/**/*.{js,ts,jsx,tsx}",
   ],
   theme: {
-    extend: {},
+    extend: {
+      backgroundColor: {
+        'primary': '#047857', // Color principal
+        'primary-hover': '#05A36A', // Color similar para hover
+      },
+    },
   },
   plugins: [
     // eslint-disable-next-line no-undef

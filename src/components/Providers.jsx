@@ -9,6 +9,7 @@ import "react-toastify/dist/ReactToastify.css";
 import SaveIcon from "@mui/icons-material/Save";
 import EditIcon from "@mui/icons-material/Edit";
 import CustomTextFieldEditor from "./customTextFieldEditor";
+import { Dialog, DialogTitle, DialogContent, TextField, Button } from '@mui/material';
 
 
 const endPoint =
@@ -28,15 +29,43 @@ export default function providers() {
         },
         { manual: true }
     );
+    const [
+        { data: postDataCreate, loading: postLoadingCreate, error: postErrorCreate },
+        executePostCreate,
+    ] = useAxios(
+        {
+            url: endPoint + "?route=createProviders",
+            method: "POST",
+        },
+        { manual: true }
+    );
 
+    const [formData, setFormData] = useState({
+        // Inicializa los campos del formulario
+        provider: '',
+        state: '',
+        city: '',
+        phoneNumber: '',
+    });
+
+    const handleFormChange = (event) => {
+        // Actualiza los datos del formulario al escribir
+        setFormData({
+            ...formData,
+            [event.target.name]: event.target.value,
+        });
+    };
 
     const [providers, setproviders] = useState([]);
     const [warning, setWarning] = useState(false);
     const [rowModesModel, setRowModesModel] = useState({});
     const [editedRow, setEditedRow] = useState({});
     const [editStates, setEditStates] = useState({});
-
-
+    const [isModalOpen, setModalOpen] = useState(false);
+    const [providerError, setProviderError] = useState(false);
+    const [stateError, setStateError] = useState(false);
+    const [cityError, setCityError] = useState(false);
+    const [phoneNumberError, setPhoneNumberError] = useState(false);
     const [selectedState, setSelectedState] = useState("");
     const [filteredProviders, setFilteredProviders] = useState([]);
 
@@ -131,11 +160,11 @@ export default function providers() {
 
     const handleSaveClick = (id) => () => {
         console.log(editStates);
-    
+
         const baseRow = providers.find((provider) => provider.rowIndex === id);
         const editsForThisRow = editStates[id] || {};
         const updatedRow = { ...baseRow, ...editsForThisRow };
-    
+
         if (updatedRow) {
             const body = {
                 editedData: updatedRow,
@@ -147,19 +176,19 @@ export default function providers() {
                 .then((response) => {
                     if (response.status === 200) {
                         toast.success("Phone edited successfully");
-    
+
                         // Actualizar el estado local 'providers' con los datos editados
                         const updatedProviders = providers.map(provider =>
                             provider.rowIndex === id ? updatedRow : provider
                         );
                         setproviders(updatedProviders);
-    
+
                         // Actualiza también 'filteredProviders'
                         const updatedFilteredProviders = filteredProviders.map(provider =>
                             provider.rowIndex === id ? updatedRow : provider
                         );
                         setFilteredProviders(updatedFilteredProviders);
-    
+
                     } else {
                         toast.error("Error");
                     }
@@ -167,11 +196,67 @@ export default function providers() {
                 .catch(() => {
                     toast.error("Error");
                 });
-    
+
             setRowModesModel({ ...rowModesModel, [id]: { mode: GridRowModes.View } });
         }
     };
-    
+
+    const handleButtonClick = () => {
+        setModalOpen(true);
+    };
+
+    const handleCloseModal = () => {
+        setModalOpen(false);
+    };
+
+    const providerErrorText = "Provider is required.";
+    const stateErrorText = "State is required.";
+    const cityErrorText = "City is required.";
+    const phoneNumberErrorText = "Phone Number is required.";
+
+
+    const handleSubmit = () => {
+        if (!formData.provider) {
+            setProviderError(true);
+        } else {
+            setProviderError(false);
+        }
+        if (!formData.state) {
+            setStateError(true);
+        } else {
+            setStateError(false);
+        }
+        if (!formData.city) {
+            setCityError(true);
+        } else {
+            setCityError(false);
+        }
+        if (!formData.phoneNumber) {
+            setPhoneNumberError(true);
+        } else {
+            setPhoneNumberError(false);
+        }
+
+        if (!formData.provider || !formData.state || !formData.city || !formData.phoneNumber) {
+            return;
+        } else {
+            executePostCreate({
+                data: JSON.stringify(formData),
+            })
+                .then((response) => {
+                    if (response.status === 200) {
+                        toast.success("Provider Added");
+                        setModalOpen(false);
+                    } else {
+                        toast.error("Error");
+                    }
+                })
+                .catch(() => {
+                    toast.error("Error");
+                });
+        }
+    };
+
 
 
 
@@ -186,6 +271,92 @@ export default function providers() {
                     Complete the required fields *
                 </p>
             )}
+
+            <div className="flex justify-end w-full">
+                <button
+                    className="inline-flex rounded-md bg-primary p-1.5 text-primary-hover hover:bg-primary-hover outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-primary text-sm font-medium leading-6 text-white font-sans"
+                    onClick={() => handleButtonClick()}
+                >
+                    Add Provider
+                </button>
+                <Dialog open={isModalOpen} onClose={() => setModalOpen(false)}>
+                    <div className="mb-2 flex justify-center">
+                        <DialogTitle>Add Provider</DialogTitle>
+                    </div>
+                    <DialogContent>
+                        <form>
+                            <div className="mb-4"> 
+                                <TextField
+                                    required
+                                    error={providerError}
+                                    helperText={providerError ? providerErrorText : ''}
+                                    name="provider"
+                                    label="Provider"
+                                    value={formData.provider}
+                                    onChange={handleFormChange}
+                                    color="success"
+                                    InputLabelProps={{
+                                        shrink: true,
+                                    }}
+                                />
+                            </div>
+                            <div className="mb-4"> 
+                                <TextField
+                                    required
+                                    error={stateError}
+                                    helperText={stateError ? stateErrorText : ''}
+                                    name="state"
+                                    label="State"
+                                    value={formData.state}
+                                    onChange={handleFormChange}
+                                    color="success"
+                                    InputLabelProps={{
+                                        shrink: true,
+                                    }}
+                                />
+                            </div>
+                            <div className="mb-4"> 
+                                <TextField
+                                    required
+                                    error={cityError}
+                                    helperText={cityError ? cityErrorText : ''}
+                                    name="city"
+                                    label="City"
+                                    value={formData.city}
+                                    onChange={handleFormChange}
+                                    color="success"
+                                    InputLabelProps={{
+                                        shrink: true,
+                                    }}
+                                />
+                            </div>
+                            <div className="mb-4"> 
+                                <TextField
+                                    required
+                                    error={phoneNumberError}
+                                    helperText={phoneNumberError ? phoneNumberErrorText : ''}
+                                    name="phoneNumber"
+                                    label="Phone Number"
+                                    value={formData.phoneNumber}
+                                    onChange={handleFormChange}
+                                    color="success"
+                                    InputLabelProps={{
+                                        shrink: true,
+                                    }}
+
+                                />
+                            </div>
+                            <div className="text-center"> {/* Centro el botón */}
+                                <Button onClick={handleSubmit} variant="contained" color="success">
+                                    Add
+                                </Button>
+                            </div>
+                        </form>
+                    </DialogContent>
+                </Dialog>
+
+            </div>
+
             <div className="flex justify-between space-x-4">
                 <ComboBox
                     title="* Select State"
