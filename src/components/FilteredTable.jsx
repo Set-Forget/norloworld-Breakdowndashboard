@@ -39,6 +39,7 @@ export default function FilteredTable() {
   const [categoriesAndSubcategories, setCategoriesAndSubcategories] = useState(
     {}
   );
+  const [selectedETA, setSelectedETA] = useState("");
 
   const handleEditClick = (id) => () => {
     const category = filteredData[id]["Repair Category"];
@@ -534,22 +535,32 @@ export default function FilteredTable() {
       renderEditCell: (params) => {
         const id = params.id;
         const value = editStates[id]?.["ETA"] || params.value || "";
-
+    
         return (
-          <CustomTextFieldEditor
-            id={id}
-            value={value}
-            onChange={(id, newValue) => {
+          <Select
+            value={editStates[id]?.["ETA"] || selectedETA} // Use selectedETA as the value
+            onChange={(e) => {
+              const newValue = e.target.value;
               const updatedEditStates = { ...editStates };
               updatedEditStates[id] = {
                 ...updatedEditStates[id],
-                ETA: newValue, // Aquí se corrigió el error
+                ETA: newValue,
               };
               setEditStates(updatedEditStates);
+    
+              // Update the selectedETA state
+              setSelectedETA(newValue);
             }}
-          />
-        );
-      },
+          >
+            <MenuItem value="< 30 min">{'<'} 30 min</MenuItem>
+            <MenuItem value="30 min">30 min</MenuItem>
+            <MenuItem value="45 min">45 min</MenuItem>
+            <MenuItem value="1 hour">1 hour</MenuItem>
+            <MenuItem value="1.5 hours">1.5 hours</MenuItem>
+            <MenuItem value="> 1.5 Hours">{">"} 1.5 Hours</MenuItem>
+          </Select>
+          );
+        },
     },
     {
       field: "On-Location",
