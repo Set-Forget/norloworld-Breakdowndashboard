@@ -120,12 +120,27 @@ export default function FilteredTable() {
 
       const categoryData = data.categories;
       setCategoriesAndSubcategories(categoryData);
+
+
       const initialEditStates = {};
       dataWithRowIndices.forEach((row, index) => {
         initialEditStates[index] = {
-          "Breakdown Date": row["BreakDown Date"],
-          "Repair Category": row["Repair Category"],
-          "Repair SubCategory": row["Repair SubCategory"],
+          "BreakDown Date": row["BreakDown Date"] || "",
+          "Driver Name": row["Driver Name"] || "",
+          "Truck #": row["Truck #"] || "",
+          "Trailer #": row["Trailer #"] || "",
+          "State": row["State"] || "",
+          "City": row["City"] || "",
+          "Service Provider": row["Service Provider"] || "",
+          "Phone Number": row["Phone Number"] || "",
+          "Repair Needed": row["Repair Needed"] || "",
+          "Repair Category": row["Repair Category"] || "",
+          "Repair SubCategory": row["Repair SubCategory"] || "",
+          "Total": row["Total"] || "",
+          "Submitted by Dashboard": row["Submitted by Dashboard"] || "",
+          "ETA": row["ETA"] || "",
+          "On-Location": row["On-Location"] || "",
+          "Complete": row["Complete"] || "",
         };
       });
       setEditStates(initialEditStates);
@@ -336,12 +351,12 @@ export default function FilteredTable() {
       renderEditCell: (params) => {
         const id = params.id;
         const selectedState = editStates[id]?.["State"];
-    
+
         // Filtra los proveedores según el estado seleccionado
         const filteredProviders = data.providers.filter(
           provider => provider.State === selectedState
         );
-    
+
         return (
           <Select
             value={editStates[id]?.["Service Provider"] || params.value || ""}
@@ -349,7 +364,7 @@ export default function FilteredTable() {
               const selectedProvider = e.target.value;
               const providerData = data.providers.find(provider => provider["Service Provider"] === selectedProvider);
               const phoneNumber = providerData ? providerData['Phone Number'] : "";
-            
+
               const updatedEditStates = { ...editStates };
               updatedEditStates[id] = {
                 ...updatedEditStates[id],
@@ -358,7 +373,7 @@ export default function FilteredTable() {
               };
               setEditStates(updatedEditStates);
             }}
-            
+
           >
             {filteredProviders.map((provider, index) => (
               <MenuItem key={index} value={provider["Service Provider"]}>
@@ -384,7 +399,7 @@ export default function FilteredTable() {
         return <div>{params.value}</div>;
       },
     },
-    
+
     {
       field: "Repair Needed",
       headerName: "Repair Needed",
@@ -535,7 +550,7 @@ export default function FilteredTable() {
       renderEditCell: (params) => {
         const id = params.id;
         const value = editStates[id]?.["ETA"] || params.value || "";
-    
+
         return (
           <Select
             value={editStates[id]?.["ETA"] || selectedETA} // Use selectedETA as the value
@@ -547,7 +562,7 @@ export default function FilteredTable() {
                 ETA: newValue,
               };
               setEditStates(updatedEditStates);
-    
+
               // Update the selectedETA state
               setSelectedETA(newValue);
             }}
@@ -559,8 +574,8 @@ export default function FilteredTable() {
             <MenuItem value="1.5 hours">1.5 hours</MenuItem>
             <MenuItem value="> 1.5 Hours">{">"} 1.5 Hours</MenuItem>
           </Select>
-          );
-        },
+        );
+      },
     },
     {
       field: "On-Location",
@@ -609,9 +624,8 @@ export default function FilteredTable() {
               setEditStates(updatedEditStates);
             }}
           >
-            <MenuItem value="Fixed">Fixed</MenuItem>
-            <MenuItem value="Paid">Paid</MenuItem>
-            <MenuItem value="Complete">Complete</MenuItem>
+            <MenuItem value="Yes">Yes</MenuItem>
+            <MenuItem value="No">No</MenuItem>
           </Select>
         );
       },
