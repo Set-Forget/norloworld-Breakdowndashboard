@@ -82,6 +82,8 @@ export default function FilteredTable() {
       const body = {
         breakdownDate: updatedData[id]["BreakDown Date"],
         city: updatedData[id].City,
+        repairType: updatedData[id]["Repair Type"],
+        description: updatedData[id]["Description"],
         driverName: updatedData[id]["Driver Name"],
         repairCategory: updatedData[id]["Repair Category"],
         repairNeeded: updatedData[id]["Repair Needed"],
@@ -90,14 +92,16 @@ export default function FilteredTable() {
         phoneNumber: updatedData[id]["Phone Number"],
         state: updatedData[id].State,
         status: updatedData[id].Status,
-        sumbittedBy: updatedData[id]["Submitted by Dashboard"],
+        sumbittedBy: updatedData[id]["Assigned To Dashboard"],
         total: updatedData[id].Total,
         trailer: updatedData[id]["Trailer #"],
         truck: updatedData[id]["Truck #"],
         rowIndex: updatedData[id].rowIndex,
         ETA: updatedData[id]["ETA"],
         onLocation: updatedData[id]["On-Location"],
-        complete: updatedData[id]["Complete"]
+        complete: updatedData[id]["Complete"],
+        status: updatedData[id]["Status"],
+
 
       };
 
@@ -131,16 +135,20 @@ export default function FilteredTable() {
           "Trailer #": row["Trailer #"] || "",
           "State": row["State"] || "",
           "City": row["City"] || "",
+          "Repair Type": row["Repair Type"] || "",
+          "Description": row["Description"] || "",
           "Service Provider": row["Service Provider"] || "",
           "Phone Number": row["Phone Number"] || "",
           "Repair Needed": row["Repair Needed"] || "",
           "Repair Category": row["Repair Category"] || "",
           "Repair SubCategory": row["Repair SubCategory"] || "",
           "Total": row["Total"] || "",
-          "Submitted by Dashboard": row["Submitted by Dashboard"] || "",
+          "Assigned To Dashboard": row["Assigned To Dashboard"] || "",
           "ETA": row["ETA"] || "",
           "On-Location": row["On-Location"] || "",
           "Complete": row["Complete"] || "",
+          "Status": row["Status"] || "",
+
         };
       });
       setEditStates(initialEditStates);
@@ -341,6 +349,55 @@ export default function FilteredTable() {
       },
     },
     {
+      field: "Repair Type",
+      headerName: "Repair Type",
+      width: 200,
+      editable: true,
+      renderEditCell: (params) => {
+        const id = params.id;
+        const value = editStates[id]?.["Repair Type"] || params.value || "";
+
+        return (
+          <CustomTextFieldEditor
+            id={id}
+            value={value}
+            onChange={(id, newValue) => {
+              const updatedEditStates = { ...editStates };
+              updatedEditStates[id] = {
+                ...updatedEditStates[id],
+                "Repair Type": newValue,
+              };
+              setEditStates(updatedEditStates);
+            }}
+          />
+        );
+      },
+    },{
+      field: "Description",
+      headerName: "Description",
+      width: 200,
+      editable: true,
+      renderEditCell: (params) => {
+        const id = params.id;
+        const value = editStates[id]?.["Description"] || params.value || "";
+
+        return (
+          <CustomTextFieldEditor
+            id={id}
+            value={value}
+            onChange={(id, newValue) => {
+              const updatedEditStates = { ...editStates };
+              updatedEditStates[id] = {
+                ...updatedEditStates[id],
+                "Description": newValue,
+              };
+              setEditStates(updatedEditStates);
+            }}
+          />
+        );
+      },
+    },
+    {
       field: "Repair Needed",
       headerName: "Repair Needed",
       width: 200,
@@ -427,8 +484,8 @@ export default function FilteredTable() {
       },
     },
     {
-      field: "Submitted by Dashboard",
-      headerName: "Sumbitted By",
+      field: "Assigned To Dashboard",
+      headerName: "Assigned To",
       width: 200,
       editable: true,
       renderCell: (params) => {
@@ -438,12 +495,12 @@ export default function FilteredTable() {
         const id = params.id;
         return (
           <Select
-            value={editStates[id]?.["Submitted by Dashboard"] || params.value || ""}
+            value={editStates[id]?.["Assigned To Dashboard"] || params.value || ""}
             onChange={(e) => {
               const updatedEditStates = { ...editStates };
               updatedEditStates[id] = {
                 ...updatedEditStates[id],
-                "Submitted by Dashboard": e.target.value,
+                "Assigned To Dashboard": e.target.value,
               };
               setEditStates(updatedEditStates);
             }}
@@ -627,6 +684,31 @@ export default function FilteredTable() {
               setEditStates(updatedEditStates);
             }}
           />
+        );
+      },
+    },
+    {
+      field: "Status",
+      headerName: "Status",
+      width: 200,
+      editable: false,
+      renderEditCell: (params) => {
+        const id = params.id;
+        const value = editStates[id]?.["Status"] || params.value || "";
+
+        return (
+          <Select
+            value={value}
+            onChange={(e) => {
+              const updatedEditStates = { ...editStates };
+              updatedEditStates[id] = {
+                ...updatedEditStates[id],
+                "Status": e.target.value,
+              };
+              setEditStates(updatedEditStates);
+            }}
+          >
+          </Select>
         );
       },
     },
