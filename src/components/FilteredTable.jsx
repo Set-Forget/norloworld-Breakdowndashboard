@@ -341,66 +341,6 @@ export default function FilteredTable() {
       },
     },
     {
-      field: "Service Provider",
-      headerName: "Service Provider",
-      width: 200,
-      editable: true,
-      renderCell: (params) => {
-        return <div>{params.value}</div>;
-      },
-      renderEditCell: (params) => {
-        const id = params.id;
-        const selectedState = editStates[id]?.["State"];
-
-        // Filtra los proveedores según el estado seleccionado
-        const filteredProviders = data.providers.filter(
-          provider => provider.State === selectedState
-        );
-
-        return (
-          <Select
-            value={editStates[id]?.["Service Provider"] || params.value || ""}
-            onChange={(e) => {
-              const selectedProvider = e.target.value;
-              const providerData = data.providers.find(provider => provider["Service Provider"] === selectedProvider);
-              const phoneNumber = providerData ? providerData['Phone Number'] : "";
-
-              const updatedEditStates = { ...editStates };
-              updatedEditStates[id] = {
-                ...updatedEditStates[id],
-                "Service Provider": selectedProvider,
-                "Phone Number": phoneNumber  // Actualizar el número de teléfono aquí
-              };
-              setEditStates(updatedEditStates);
-            }}
-
-          >
-            {filteredProviders.map((provider, index) => (
-              <MenuItem key={index} value={provider["Service Provider"]}>
-                {provider["Service Provider"]}  {/* Aquí está la corrección */}
-              </MenuItem>
-            ))}
-          </Select>
-        );
-      },
-    },
-    {
-      field: "Phone Number",
-      headerName: "Phone Number",
-      width: 200,
-      editable: false, // Esto asegura que la columna no sea editable
-      valueGetter: (params) => {
-        // Suponiendo que el array data.providers tiene una propiedad phoneNumber para cada proveedor
-        const selectedProvider = params.row["Service Provider"];
-        const providerData = data.providers.find(provider => provider["Service Provider"] === selectedProvider);
-        return providerData ? providerData['Phone Number'] : ""; // Devuelve el número de teléfono o una cadena vacía si no se encuentra
-      },
-      renderCell: (params) => {
-        return <div>{params.value}</div>;
-      },
-    },
-
-    {
       field: "Repair Needed",
       headerName: "Repair Needed",
       width: 200,
@@ -487,31 +427,6 @@ export default function FilteredTable() {
       },
     },
     {
-      field: "Total",
-      headerName: "Total",
-      width: 200,
-      editable: true,
-      renderEditCell: (params) => {
-        const id = params.id;
-        const value = editStates[id]?.["Total"] || params.value || "";
-
-        return (
-          <CustomTextFieldEditor
-            id={id}
-            value={value}
-            onChange={(id, newValue) => {
-              const updatedEditStates = { ...editStates };
-              updatedEditStates[id] = {
-                ...updatedEditStates[id],
-                Total: newValue,
-              };
-              setEditStates(updatedEditStates);
-            }}
-          />
-        );
-      },
-    },
-    {
       field: "Submitted by Dashboard",
       headerName: "Sumbitted By",
       width: 200,
@@ -542,6 +457,66 @@ export default function FilteredTable() {
         );
       },
     },
+    {
+      field: "Service Provider",
+      headerName: "Service Provider",
+      width: 200,
+      editable: true,
+      renderCell: (params) => {
+        return <div>{params.value}</div>;
+      },
+      renderEditCell: (params) => {
+        const id = params.id;
+        const selectedState = editStates[id]?.["State"];
+
+        // Filtra los proveedores según el estado seleccionado
+        const filteredProviders = data.providers.filter(
+          provider => provider.State === selectedState
+        );
+
+        return (
+          <Select
+            value={editStates[id]?.["Service Provider"] || params.value || ""}
+            onChange={(e) => {
+              const selectedProvider = e.target.value;
+              const providerData = data.providers.find(provider => provider["Service Provider"] === selectedProvider);
+              const phoneNumber = providerData ? providerData['Phone Number'] : "";
+
+              const updatedEditStates = { ...editStates };
+              updatedEditStates[id] = {
+                ...updatedEditStates[id],
+                "Service Provider": selectedProvider,
+                "Phone Number": phoneNumber  // Actualizar el número de teléfono aquí
+              };
+              setEditStates(updatedEditStates);
+            }}
+
+          >
+            {filteredProviders.map((provider, index) => (
+              <MenuItem key={index} value={provider["Service Provider"]}>
+                {provider["Service Provider"]}  {/* Aquí está la corrección */}
+              </MenuItem>
+            ))}
+          </Select>
+        );
+      },
+    },
+    {
+      field: "Phone Number",
+      headerName: "Phone Number",
+      width: 200,
+      editable: false, // Esto asegura que la columna no sea editable
+      valueGetter: (params) => {
+        // Suponiendo que el array data.providers tiene una propiedad phoneNumber para cada proveedor
+        const selectedProvider = params.row["Service Provider"];
+        const providerData = data.providers.find(provider => provider["Service Provider"] === selectedProvider);
+        return providerData ? providerData['Phone Number'] : ""; // Devuelve el número de teléfono o una cadena vacía si no se encuentra
+      },
+      renderCell: (params) => {
+        return <div>{params.value}</div>;
+      },
+    },
+
     {
       field: "ETA",
       headerName: "ETA",
@@ -629,8 +604,32 @@ export default function FilteredTable() {
           </Select>
         );
       },
-    }
-    ,
+    } ,
+    {
+      field: "Total",
+      headerName: "Total",
+      width: 200,
+      editable: true,
+      renderEditCell: (params) => {
+        const id = params.id;
+        const value = editStates[id]?.["Total"] || params.value || "";
+
+        return (
+          <CustomTextFieldEditor
+            id={id}
+            value={value}
+            onChange={(id, newValue) => {
+              const updatedEditStates = { ...editStates };
+              updatedEditStates[id] = {
+                ...updatedEditStates[id],
+                Total: newValue,
+              };
+              setEditStates(updatedEditStates);
+            }}
+          />
+        );
+      },
+    },
     {
       field: "actions",
       type: "actions",
