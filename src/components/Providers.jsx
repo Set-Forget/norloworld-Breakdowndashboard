@@ -269,7 +269,7 @@ export default function providers() {
     if (error) return <div>Error al obtener los datos: {error.message}</div>;
     console.log(data)
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100vh' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
             {warning && (
                 <p className="text-sm text-red-600 mt-4 mb-4" id="email-error">
                     Complete the required fields *

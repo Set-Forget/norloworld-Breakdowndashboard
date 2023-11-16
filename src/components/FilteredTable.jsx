@@ -5,11 +5,8 @@ import isBetween from "dayjs/plugin/isBetween";
 import Spinner from "./Spinner";
 import { DataGrid } from "@mui/x-data-grid";
 import { Select, MenuItem, TextField } from "@mui/material";
-import SaveIcon from "@mui/icons-material/Save";
-import EditIcon from "@mui/icons-material/Edit";
-import DeleteIcon from "@mui/icons-material/DeleteOutlined";
-import { GridActionsCellItem, GridRowModes } from "@mui/x-data-grid";
 import CustomTextFieldEditor from "./customTextFieldEditor";
+import { useFilteredData } from "./BreakdownsContext";
 
 dayjs.extend(isBetween);
 
@@ -32,738 +29,820 @@ export default function FilteredTable() {
     },
     { manual: true }
   );
-  const [filteredData, setFilteredData] = useState([]);
+  const {
+    filteredData,
+    setFilteredData,
+    categoriesAndSubcategories,
+    setCategoriesAndSubcategories,
+  } = useFilteredData();
   const [rowModesModel, setRowModesModel] = useState({});
-  const [gridKey, setGridKey] = useState(0);
-  const [editRowsModel, setEditRowsModel] = useState({});
-  const [categoriesAndSubcategories, setCategoriesAndSubcategories] = useState(
-    {}
-  );
+
   const [selectedETA, setSelectedETA] = useState("");
-
-  const handleEditClick = (id) => () => {
-    const category = filteredData[id]["Repair Category"];
-    const subcategory = filteredData[id]["Repair SubCategory"];
-
-    setSelectedCategory(category);
-    setSelectedSubcategory(subcategory);
-
-    setRowModesModel({ ...rowModesModel, [id]: { mode: GridRowModes.Edit } });
-  };
 
   const [editStates, setEditStates] = useState({});
 
-  const handleSaveClick = (id) => () => {
-    if (editStates[id]) {
-      const updatedRow = {
-        ...filteredData[id],
-        ...editStates[id],
-      };
-
-      console.log("Datos antes de la actualización:", filteredData[id]);
-
-      const updatedData = [...filteredData];
-      updatedData[id] = updatedRow;
-
-      console.log("Datos después de la actualización:", updatedData[id]);
-
-      setFilteredData(updatedData);
-
-      const updatedEditStates = { ...editStates };
-      delete updatedEditStates[id];
-      setEditStates(updatedEditStates);
-
-      setRowModesModel({ ...rowModesModel, [id]: { mode: GridRowModes.View } });
-
-      setGridKey((prevKey) => prevKey + 1);
-
-      console.log("Guardado exitoso para la fila con id:", id);
-
-      const body = {
-        breakdownDate: updatedData[id]["BreakDown Date"],
-        city: updatedData[id].City,
-        repairType: updatedData[id]["Repair Type"],
-        description: updatedData[id]["Description"],
-        driverName: updatedData[id]["Driver Name"],
-        repairCategory: updatedData[id]["Repair Category"],
-        repairNeeded: updatedData[id]["Repair Needed"],
-        repairSubCategory: updatedData[id]["Repair SubCategory"],
-        serviceProvider: updatedData[id]["Service Provider"],
-        phoneNumber: updatedData[id]["Phone Number"],
-        state: updatedData[id].State,
-        status: updatedData[id].Status,
-        sumbittedBy: updatedData[id]["Assigned To Dashboard"],
-        total: updatedData[id].Total,
-        trailer: updatedData[id]["Trailer #"],
-        truck: updatedData[id]["Truck #"],
-        rowIndex: updatedData[id].rowIndex,
-        ETA: updatedData[id]["ETA"],
-        onLocation: updatedData[id]["On-Location"],
-        complete: updatedData[id]["Complete"],
-        status: updatedData[id]["Status"],
-
-
-      };
-
-      console.log("body", body)
-      executePost({
-        data: JSON.stringify(body),
-      });
-    }
-  };
+  const [currentStage, setCurrentStage] = useState(
+    "ROADSIDE_SERVICE_REQUESTED"
+  );
   const [selectedCategory, setSelectedCategory] = useState("");
   const [selectedSubcategory, setSelectedSubcategory] = useState("");
+  const [updateKey, setUpdateKey] = useState(0);
 
   useEffect(() => {
-    if (data) {
+    if (filteredData && filteredData.length > 0) {
+      console.log("Usando datos del contexto global");
+    } else if (data) {
       const dataWithRowIndices = data.breakDowns.map((item, index) => ({
         ...item,
         rowIndex: index,
       }));
-      setFilteredData(dataWithRowIndices);
 
-      const categoryData = data.categories;
-      setCategoriesAndSubcategories(categoryData);
+      const filteredRows = dataWithRowIndices.filter(
+        (row) => row.Status !== "Complete"
+      );
 
+      setFilteredData(filteredRows);
 
-      const initialEditStates = {};
-      dataWithRowIndices.forEach((row, index) => {
-        initialEditStates[index] = {
-          "BreakDown Date": row["BreakDown Date"] || "",
-          "Driver Name": row["Driver Name"] || "",
-          "Truck #": row["Truck #"] || "",
-          "Trailer #": row["Trailer #"] || "",
-          "State": row["State"] || "",
-          "City": row["City"] || "",
-          "Repair Type": row["Repair Type"] || "",
-          "Description": row["Description"] || "",
-          "Service Provider": row["Service Provider"] || "",
-          "Phone Number": row["Phone Number"] || "",
-          "Repair Needed": row["Repair Needed"] || "",
-          "Repair Category": row["Repair Category"] || "",
-          "Repair SubCategory": row["Repair SubCategory"] || "",
-          "Total": row["Total"] || "",
-          "Assigned To Dashboard": row["Assigned To Dashboard"] || "",
-          "ETA": row["ETA"] || "",
-          "On-Location": row["On-Location"] || "",
-          "Complete": row["Complete"] || "",
-          "Status": row["Status"] || "",
+      if (data.categories) {
+        const categoryData = data.categories;
+        setCategoriesAndSubcategories(categoryData);
+      }
 
-        };
-      });
-      setEditStates(initialEditStates);
+      console.log("Cargando datos desde la API");
     }
-  }, [data]);
-
-
+  }, [data, filteredData, setFilteredData, setCategoriesAndSubcategories]);
 
   if (loading || typeLoading) return <Spinner />;
 
-  const handleCategoryChange = (e) => {
-    const newCategory = e.target.value;
-    setSelectedCategory(newCategory);
+  const processRowUpdate = async (newRow, oldRow) => {
+    if (newRow.Total && newRow.Total.startsWith("$")) {
+      newRow.Total = newRow.Total.substring(1);
+    }
 
-    setSelectedSubcategory("");
+    const updatedRow = {
+      ...newRow,
+      ...(editStates[newRow.rowIndex] || {}),
+    };
+
+    const body = {
+      breakdownDate: updatedRow["BreakDown Date"],
+      city: updatedRow.City,
+      repairType: updatedRow["Repair Type"],
+      description: updatedRow["Description"],
+      driverName: updatedRow["Driver Name"],
+      repairCategory: updatedRow["Repair Category"],
+      repairNeeded: updatedRow["Repair Needed"],
+      repairSubCategory: updatedRow["Repair SubCategory"],
+      serviceProvider: updatedRow["Service Provider"],
+      phoneNumber: updatedRow["Phone Number"],
+      state: updatedRow.State,
+      status: updatedRow.Status,
+      sumbittedBy: updatedRow["Assigned To Dashboard"],
+      total: updatedRow.Total,
+      trailer: updatedRow["Trailer #"],
+      truck: updatedRow["Truck #"],
+      rowIndex: updatedRow.rowIndex,
+      ETA: updatedRow["ETA"],
+      onLocation: updatedRow["On-Location"],
+      complete: updatedRow["Complete"],
+    };
+
+    try {
+      await executePost({
+        data: JSON.stringify(body),
+      });
+
+      setFilteredData((currentFilteredData) => {
+        const newData = currentFilteredData.map((row) =>
+          row.rowIndex === newRow.rowIndex ? { ...row, ...updatedRow } : row
+        );
+
+        console.log("newData after update", newData);
+        return newData;
+      });
+
+      setUpdateKey((prevKey) => prevKey + 1);
+    } catch (error) {
+      console.error("Error actualizando la fila:", error);
+      return oldRow;
+    }
+
+    return updatedRow;
   };
 
-  console.log(data);
+  const columnsByStage = {
+    ROADSIDE_SERVICE_REQUESTED: [
+      {
+        field: "BreakDown Date",
+        headerName: "Breakdown Date",
+        width: 120,
+        editable: true,
+        renderCell: (params) => {
+          return <div>{dayjs(params.value).format("YYYY-MM-DD")}</div>;
+        },
+        renderEditCell: (params) => {
+          const id = params.id;
+          const value = dayjs(
+            editStates[id]?.["BreakDown Date"] || params.value
+          ).format("YYYY-MM-DD");
+          const isValidDate = (dateString) => {
+            return !!dayjs(dateString, "YYYY-MM-DD", true).isValid();
+          };
+          const handleDateChange = (e) => {
+            const newValue = e.target.value;
 
-
-  const columns = [
-    {
-      field: "BreakDown Date",
-      headerName: "Breakdown Date",
-      width: 200,
-      editable: true,
-      renderCell: (params) => {
-        return <div>{dayjs(params.value).format("YYYY-MM-DD")}</div>;
-      },
-      renderEditCell: (params) => {
-        const id = params.id;
-        const value = dayjs(editStates[id]?.["BreakDown Date"] || params.value).format("YYYY-MM-DD");
-        const isValidDate = (dateString) => {
-          return !!dayjs(dateString, "YYYY-MM-DD", true).isValid();
-        };
-        const handleDateChange = (e) => {
-          const newValue = e.target.value;
-
-          if (isValidDate(newValue)) {
-            const updatedEditStates = { ...editStates };
-            updatedEditStates[id] = {
-              ...updatedEditStates[id],
-              "BreakDown Date": newValue,
-            };
-            setEditStates(updatedEditStates);
-          }
-        };
-
-        return (
-          <TextField
-            type="date"
-            value={value}
-            onChange={handleDateChange}
-            InputProps={{
-              inputProps: {
-                max: dayjs().format("YYYY-MM-DD"), // Optional: set max date if needed
-              },
-            }}
-          />
-        );
-      },
-    },
-    {
-      field: "Driver Name",
-      headerName: "Driver Name",
-      width: 200,
-      editable: true,
-      renderCell: (params) => {
-        return <div>{params.value}</div>;
-      },
-      renderEditCell: (params) => {
-        const id = params.id;
-        return (
-          <Select
-            value={editStates[id]?.["Driver Name"] || params.value || ""}
-            onChange={(e) => {
+            if (isValidDate(newValue)) {
               const updatedEditStates = { ...editStates };
               updatedEditStates[id] = {
                 ...updatedEditStates[id],
-                "Driver Name": e.target.value,
+                "BreakDown Date": newValue,
               };
               setEditStates(updatedEditStates);
-            }}
-          >
-            {data.drivers.map((name, index) => (
-              <MenuItem key={index} value={name}>
-                {name}
-              </MenuItem>
-            ))}
-          </Select>
-        );
+            }
+          };
+
+          return (
+            <TextField
+              type="date"
+              value={value}
+              onChange={handleDateChange}
+              InputProps={{
+                inputProps: {
+                  max: dayjs().format("YYYY-MM-DD"), // Optional: set max date if needed
+                },
+              }}
+            />
+          );
+        },
       },
-    },
+      {
+        field: "Driver Name",
+        headerName: "Driver Name",
+        width: 200,
+        editable: true,
+        renderCell: (params) => {
+          return <div>{params.value}</div>;
+        },
+        renderEditCell: (params) => {
+          const id = params.id;
+          return (
+            <Select
+              value={editStates[id]?.["Driver Name"] || params.value || ""}
+              onChange={(e) => {
+                const updatedEditStates = { ...editStates };
+                updatedEditStates[id] = {
+                  ...updatedEditStates[id],
+                  "Driver Name": e.target.value,
+                };
+                setEditStates(updatedEditStates);
+              }}
+            >
+              {data.drivers.map((name, index) => (
+                <MenuItem key={index} value={name}>
+                  {name}
+                </MenuItem>
+              ))}
+            </Select>
+          );
+        },
+      },
+      {
+        field: "Truck #",
+        headerName: "Truck #",
+        width: 100,
+        editable: true,
+        renderEditCell: (params) => {
+          const id = params.id;
+          const value = editStates[id]?.["Truck #"] || params.value || "";
+
+          return (
+            <CustomTextFieldEditor
+              id={id}
+              value={value}
+              onChange={(id, newValue) => {
+                const updatedEditStates = { ...editStates };
+                updatedEditStates[id] = {
+                  ...updatedEditStates[id],
+                  "Truck #": newValue,
+                };
+                setEditStates(updatedEditStates);
+              }}
+            />
+          );
+        },
+      },
+      {
+        field: "Trailer #",
+        headerName: "Trailer #",
+        width: 100,
+        editable: true,
+        renderEditCell: (params) => {
+          const id = params.id;
+          const value = editStates[id]?.["Trailer #"] || params.value || "";
+
+          return (
+            <CustomTextFieldEditor
+              id={id}
+              value={value}
+              onChange={(id, newValue) => {
+                const updatedEditStates = { ...editStates };
+                updatedEditStates[id] = {
+                  ...updatedEditStates[id],
+                  "Trailer #": newValue,
+                };
+                setEditStates(updatedEditStates);
+              }}
+            />
+          );
+        },
+      },
+      {
+        field: "State",
+        headerName: "State",
+        width: 100,
+        editable: true,
+        renderCell: (params) => {
+          return <div>{params.value}</div>;
+        },
+        renderEditCell: (params) => {
+          const id = params.id;
+          return (
+            <Select
+              value={editStates[id]?.["State"] || params.value || ""}
+              onChange={(e) => {
+                const updatedEditStates = { ...editStates };
+                updatedEditStates[id] = {
+                  ...updatedEditStates[id],
+                  State: e.target.value,
+                };
+                setEditStates(updatedEditStates);
+              }}
+            >
+              {data.states.map((name, index) => (
+                <MenuItem key={index} value={name}>
+                  {name}
+                </MenuItem>
+              ))}
+            </Select>
+          );
+        },
+      },
+      {
+        field: "City",
+        headerName: "City",
+        width: 150,
+        editable: true,
+        renderEditCell: (params) => {
+          const id = params.id;
+          const value = editStates[id]?.["City"] || params.value || "";
+
+          return (
+            <CustomTextFieldEditor
+              id={id}
+              value={value}
+              onChange={(id, newValue) => {
+                const updatedEditStates = { ...editStates };
+                updatedEditStates[id] = {
+                  ...updatedEditStates[id],
+                  City: newValue,
+                };
+                setEditStates(updatedEditStates);
+              }}
+            />
+          );
+        },
+      },
+      {
+        field: "Repair Type",
+        headerName: "Repair Type",
+        width: 180,
+        editable: true,
+        renderEditCell: (params) => {
+          const id = params.id;
+          const value = editStates[id]?.["Repair Type"] || params.value || "";
+
+          return (
+            <CustomTextFieldEditor
+              id={id}
+              value={value}
+              onChange={(id, newValue) => {
+                const updatedEditStates = { ...editStates };
+                updatedEditStates[id] = {
+                  ...updatedEditStates[id],
+                  "Repair Type": newValue,
+                };
+                setEditStates(updatedEditStates);
+              }}
+            />
+          );
+        },
+      },
+      {
+        field: "Description",
+        headerName: "Description",
+        width: 150,
+        editable: true,
+        renderEditCell: (params) => {
+          const id = params.id;
+          const value = editStates[id]?.["Description"] || params.value || "";
+
+          return (
+            <CustomTextFieldEditor
+              id={id}
+              value={value}
+              onChange={(id, newValue) => {
+                const updatedEditStates = { ...editStates };
+                updatedEditStates[id] = {
+                  ...updatedEditStates[id],
+                  Description: newValue,
+                };
+                setEditStates(updatedEditStates);
+              }}
+            />
+          );
+        },
+      },
+    ],
+    DIAGNOSTICS_TROUBLESHOOTING: [
+      {
+        field: "Repair Needed",
+        headerName: "Repair Needed",
+        width: 200,
+        editable: true,
+        renderEditCell: (params) => {
+          const id = params.id;
+          const value = editStates[id]?.["Repair Needed"] || params.value || "";
+
+          return (
+            <CustomTextFieldEditor
+              id={id}
+              value={value}
+              onChange={(id, newValue) => {
+                const updatedEditStates = { ...editStates };
+                updatedEditStates[id] = {
+                  ...updatedEditStates[id],
+                  "Repair Needed": newValue,
+                };
+                setEditStates(updatedEditStates);
+              }}
+            />
+          );
+        },
+      },
+      {
+        field: "Repair Category",
+        headerName: "Repair Category",
+        width: 200,
+        editable: true,
+        renderEditCell: (params) => {
+          const id = params.id;
+          return (
+            <Select
+              value={editStates[id]?.["Repair Category"] || params.value}
+              onChange={(e) => {
+                const updatedEditStates = { ...editStates };
+                updatedEditStates[id] = {
+                  ...updatedEditStates[id],
+                  "Repair Category": e.target.value,
+                };
+                setEditStates(updatedEditStates);
+
+                // Actualizar las subcategorías cuando cambia la categoría
+                setSelectedSubcategory("");
+              }}
+            >
+              {Object.keys(categoriesAndSubcategories).map(
+                (category, index) => (
+                  <MenuItem key={index} value={category}>
+                    {category}
+                  </MenuItem>
+                )
+              )}
+            </Select>
+          );
+        },
+      },
+      {
+        field: "Repair SubCategory",
+        headerName: "Repair Subcategory",
+        width: 200,
+        editable: true,
+        renderEditCell: (params) => {
+          const id = params.id;
+          const category =
+            editStates[id]?.["Repair Category"] || selectedCategory;
+
+          return (
+            <Select
+              value={
+                editStates[id]?.["Repair SubCategory"] || selectedSubcategory
+              }
+              onChange={(e) => {
+                const updatedEditStates = { ...editStates };
+                updatedEditStates[id] = {
+                  ...updatedEditStates[id],
+                  "Repair SubCategory": e.target.value,
+                };
+                setEditStates(updatedEditStates);
+              }}
+            >
+              {categoriesAndSubcategories[category]?.map((name, index) => (
+                <MenuItem key={index} value={name}>
+                  {name}
+                </MenuItem>
+              ))}
+            </Select>
+          );
+        },
+      },
+      {
+        field: "Assigned To Dashboard",
+        headerName: "Assigned To",
+        width: 200,
+        editable: true,
+        renderCell: (params) => {
+          return <div>{params.value}</div>;
+        },
+        renderEditCell: (params) => {
+          const id = params.id;
+          return (
+            <Select
+              value={
+                editStates[id]?.["Assigned To Dashboard"] || params.value || ""
+              }
+              onChange={(e) => {
+                const updatedEditStates = { ...editStates };
+                updatedEditStates[id] = {
+                  ...updatedEditStates[id],
+                  "Assigned To Dashboard": e.target.value,
+                };
+                setEditStates(updatedEditStates);
+              }}
+            >
+              {data.users.map((name, index) => (
+                <MenuItem key={index} value={name}>
+                  {name}
+                </MenuItem>
+              ))}
+            </Select>
+          );
+        },
+      },
+    ],
+    ROADSIDE_IN_PROGRESS: [
+      {
+        field: "Service Provider",
+        headerName: "Service Provider",
+        width: 200,
+        editable: true,
+        renderCell: (params) => {
+          return <div>{params.value}</div>;
+        },
+        renderEditCell: (params) => {
+          const id = params.id;
+          const selectedState = editStates[id]?.["State"];
+
+          // Filtra los proveedores según el estado seleccionado
+          const filteredProviders = data.providers.filter(
+            (provider) => provider.State === selectedState
+          );
+
+          return (
+            <Select
+              value={editStates[id]?.["Service Provider"] || params.value || ""}
+              onChange={(e) => {
+                const selectedProvider = e.target.value;
+                const providerData = data.providers.find(
+                  (provider) =>
+                    provider["Service Provider"] === selectedProvider
+                );
+                const phoneNumber = providerData
+                  ? providerData["Phone Number"]
+                  : "";
+
+                const updatedEditStates = { ...editStates };
+                updatedEditStates[id] = {
+                  ...updatedEditStates[id],
+                  "Service Provider": selectedProvider,
+                  "Phone Number": phoneNumber, // Actualizar el número de teléfono aquí
+                };
+                setEditStates(updatedEditStates);
+              }}
+            >
+              {filteredProviders.map((provider, index) => (
+                <MenuItem key={index} value={provider["Service Provider"]}>
+                  {provider["Service Provider"]} {/* Aquí está la corrección */}
+                </MenuItem>
+              ))}
+            </Select>
+          );
+        },
+      },
+      {
+        field: "Phone Number",
+        headerName: "Phone Number",
+        width: 200,
+        editable: false, // Esto asegura que la columna no sea editable
+        valueGetter: (params) => {
+          // Suponiendo que el array data.providers tiene una propiedad phoneNumber para cada proveedor
+          const selectedProvider = params.row["Service Provider"];
+          const providerData = data.providers.find(
+            (provider) => provider["Service Provider"] === selectedProvider
+          );
+          return providerData ? providerData["Phone Number"] : ""; // Devuelve el número de teléfono o una cadena vacía si no se encuentra
+        },
+        renderCell: (params) => {
+          return <div>{params.value}</div>;
+        },
+      },
+
+      {
+        field: "ETA",
+        headerName: "ETA",
+        width: 100,
+        editable: true,
+        renderEditCell: (params) => {
+          const id = params.id;
+          const value = editStates[id]?.["ETA"] || params.value || "";
+
+          return (
+            <Select
+              value={editStates[id]?.["ETA"] || selectedETA} // Use selectedETA as the value
+              onChange={(e) => {
+                const newValue = e.target.value;
+                const updatedEditStates = { ...editStates };
+                updatedEditStates[id] = {
+                  ...updatedEditStates[id],
+                  ETA: newValue,
+                };
+                setEditStates(updatedEditStates);
+
+                // Update the selectedETA state
+                setSelectedETA(newValue);
+              }}
+            >
+              <MenuItem value="< 30 min">{"<"} 30 min</MenuItem>
+              <MenuItem value="30 min">30 min</MenuItem>
+              <MenuItem value="45 min">45 min</MenuItem>
+              <MenuItem value="1 hour">1 hour</MenuItem>
+              <MenuItem value="1.5 hours">1.5 hours</MenuItem>
+              <MenuItem value="> 1.5 Hours">{">"} 1.5 Hours</MenuItem>
+            </Select>
+          );
+        },
+      },
+      {
+        field: "On-Location",
+        headerName: "On-Location",
+        width: 100,
+        editable: true,
+        renderEditCell: (params) => {
+          const id = params.id;
+          const value = editStates[id]?.["On-Location"] || params.value || "";
+
+          return (
+            <Select
+              value={value}
+              onChange={(e) => {
+                const updatedEditStates = { ...editStates };
+                updatedEditStates[id] = {
+                  ...updatedEditStates[id],
+                  "On-Location": e.target.value,
+                };
+                setEditStates(updatedEditStates);
+              }}
+            >
+              <MenuItem value="Arrived">Arrived</MenuItem>
+            </Select>
+          );
+        },
+      },
+      {
+        field: "Complete",
+        headerName: "Complete",
+        width: 100,
+        editable: true,
+        renderEditCell: (params) => {
+          const id = params.id;
+          const value = editStates[id]?.["Complete"] || params.value || "";
+
+          return (
+            <Select
+              value={value}
+              onChange={(e) => {
+                const updatedEditStates = { ...editStates };
+                updatedEditStates[id] = {
+                  ...updatedEditStates[id],
+                  Complete: e.target.value,
+                };
+                setEditStates(updatedEditStates);
+              }}
+            >
+              <MenuItem value="Yes">Yes</MenuItem>
+              <MenuItem value="No">No</MenuItem>
+            </Select>
+          );
+        },
+      },
+      {
+        field: "Total",
+        headerName: "Total",
+        width: 120,
+        editable: true,
+        renderCell: (params) => {
+          return <div>{"$" + params.value}</div>;
+        },
+        renderEditCell: (params) => {
+          const id = params.id;
+          const value = editStates[id]?.["Total"] || params.value || "";
+
+          return (
+            <CustomTextFieldEditor
+              id={id}
+              value={value}
+              onChange={(id, newValue) => {
+                const updatedEditStates = { ...editStates };
+                updatedEditStates[id] = {
+                  ...updatedEditStates[id],
+                  Total: newValue,
+                };
+                setEditStates(updatedEditStates);
+              }}
+            />
+          );
+        },
+      },
+      {
+        field: "Status",
+        headerName: "Status",
+        width: 120,
+        editable: false,
+        renderEditCell: (params) => {
+          const id = params.id;
+          const value = editStates[id]?.["Status"] || params.value || "";
+
+          return (
+            <Select
+              value={value}
+              onChange={(e) => {
+                const updatedEditStates = { ...editStates };
+                updatedEditStates[id] = {
+                  ...updatedEditStates[id],
+                  Status: e.target.value,
+                };
+                setEditStates(updatedEditStates);
+              }}
+            ></Select>
+          );
+        },
+      },
+      // {
+      //   field: "actions",
+      //   type: "actions",
+      //   headerName: "Actions",
+      //   width: 100,
+      //   getActions: ({ id }) => {
+      //     const isInEditMode = rowModesModel[id]?.mode === GridRowModes.Edit;
+
+      //     if (isInEditMode) {
+      //       return [
+      //         <GridActionsCellItem
+      //           icon={<SaveIcon />}
+      //           label="Save"
+      //           onClick={handleSaveClick(id)}
+      //         />,
+      //       ];
+      //     }
+
+      //     return [
+      //       <GridActionsCellItem
+      //         icon={<EditIcon />}
+      //         label="Edit"
+      //         onClick={handleEditClick(id)}
+      //       />,
+      //     ];
+      //   },
+      // },
+    ],
+  };
+
+  const stages = [
+    { name: "ROADSIDE_SERVICE_REQUESTED", label: "Roadside Service Requested" },
     {
-      field: "Truck #",
-      headerName: "Truck #",
-      width: 200,
-      editable: true,
-      renderEditCell: (params) => {
-        const id = params.id;
-        const value = editStates[id]?.["Truck #"] || params.value || "";
-
-        return (
-          <CustomTextFieldEditor
-            id={id}
-            value={value}
-            onChange={(id, newValue) => {
-              const updatedEditStates = { ...editStates };
-              updatedEditStates[id] = {
-                ...updatedEditStates[id],
-                "Truck #": newValue,
-              };
-              setEditStates(updatedEditStates);
-            }}
-          />
-        );
-      },
+      name: "DIAGNOSTICS_TROUBLESHOOTING",
+      label: "Diagnostics & Troubleshooting",
     },
-    {
-      field: "Trailer #",
-      headerName: "Trailer #",
-      width: 200,
-      editable: true,
-      renderEditCell: (params) => {
-        const id = params.id;
-        const value = editStates[id]?.["Trailer #"] || params.value || "";
-
-        return (
-          <CustomTextFieldEditor
-            id={id}
-            value={value}
-            onChange={(id, newValue) => {
-              const updatedEditStates = { ...editStates };
-              updatedEditStates[id] = {
-                ...updatedEditStates[id],
-                "Trailer #": newValue,
-              };
-              setEditStates(updatedEditStates);
-            }}
-          />
-        );
-      },
-    },
-    {
-      field: "State",
-      headerName: "State",
-      width: 200,
-      editable: true,
-      renderCell: (params) => {
-        return <div>{params.value}</div>;
-      },
-      renderEditCell: (params) => {
-        const id = params.id;
-        return (
-          <Select
-            value={editStates[id]?.["State"] || params.value || ""}
-            onChange={(e) => {
-              const updatedEditStates = { ...editStates };
-              updatedEditStates[id] = {
-                ...updatedEditStates[id],
-                State: e.target.value,
-              };
-              setEditStates(updatedEditStates);
-            }}
-          >
-            {data.states.map((name, index) => (
-              <MenuItem key={index} value={name}>
-                {name}
-              </MenuItem>
-            ))}
-          </Select>
-        );
-      },
-    },
-    {
-      field: "City",
-      headerName: "City",
-      width: 200,
-      editable: true,
-      renderEditCell: (params) => {
-        const id = params.id;
-        const value = editStates[id]?.["City"] || params.value || "";
-
-        return (
-          <CustomTextFieldEditor
-            id={id}
-            value={value}
-            onChange={(id, newValue) => {
-              const updatedEditStates = { ...editStates };
-              updatedEditStates[id] = {
-                ...updatedEditStates[id],
-                City: newValue,
-              };
-              setEditStates(updatedEditStates);
-            }}
-          />
-        );
-      },
-    },
-    {
-      field: "Repair Type",
-      headerName: "Repair Type",
-      width: 200,
-      editable: true,
-      renderEditCell: (params) => {
-        const id = params.id;
-        const value = editStates[id]?.["Repair Type"] || params.value || "";
-
-        return (
-          <CustomTextFieldEditor
-            id={id}
-            value={value}
-            onChange={(id, newValue) => {
-              const updatedEditStates = { ...editStates };
-              updatedEditStates[id] = {
-                ...updatedEditStates[id],
-                "Repair Type": newValue,
-              };
-              setEditStates(updatedEditStates);
-            }}
-          />
-        );
-      },
-    },{
-      field: "Description",
-      headerName: "Description",
-      width: 200,
-      editable: true,
-      renderEditCell: (params) => {
-        const id = params.id;
-        const value = editStates[id]?.["Description"] || params.value || "";
-
-        return (
-          <CustomTextFieldEditor
-            id={id}
-            value={value}
-            onChange={(id, newValue) => {
-              const updatedEditStates = { ...editStates };
-              updatedEditStates[id] = {
-                ...updatedEditStates[id],
-                "Description": newValue,
-              };
-              setEditStates(updatedEditStates);
-            }}
-          />
-        );
-      },
-    },
-    {
-      field: "Repair Needed",
-      headerName: "Repair Needed",
-      width: 200,
-      editable: true,
-      renderEditCell: (params) => {
-        const id = params.id;
-        const value = editStates[id]?.["Repair Needed"] || params.value || "";
-
-        return (
-          <CustomTextFieldEditor
-            id={id}
-            value={value}
-            onChange={(id, newValue) => {
-              const updatedEditStates = { ...editStates };
-              updatedEditStates[id] = {
-                ...updatedEditStates[id],
-                "Repair Needed": newValue,
-              };
-              setEditStates(updatedEditStates);
-            }}
-          />
-        );
-      },
-    },
-    {
-      field: "Repair Category",
-      headerName: "Repair Category",
-      width: 200,
-      editable: true,
-      renderEditCell: (params) => {
-        const id = params.id;
-        return (
-          <Select
-            value={editStates[id]?.["Repair Category"] || params.value}
-            onChange={(e) => {
-              const updatedEditStates = { ...editStates };
-              updatedEditStates[id] = {
-                ...updatedEditStates[id],
-                "Repair Category": e.target.value,
-              };
-              setEditStates(updatedEditStates);
-
-              // Actualizar las subcategorías cuando cambia la categoría
-              setSelectedSubcategory("");
-            }}
-          >
-            {Object.keys(categoriesAndSubcategories).map((category, index) => (
-              <MenuItem key={index} value={category}>
-                {category}
-              </MenuItem>
-            ))}
-          </Select>
-        );
-      },
-    },
-    {
-      field: "Repair SubCategory",
-      headerName: "Repair Subcategory",
-      width: 200,
-      editable: true,
-      renderEditCell: (params) => {
-        const id = params.id;
-        const category = editStates[id]?.["Repair Category"] || selectedCategory;
-
-        return (
-          <Select
-            value={editStates[id]?.["Repair SubCategory"] || selectedSubcategory}
-            onChange={(e) => {
-              const updatedEditStates = { ...editStates };
-              updatedEditStates[id] = {
-                ...updatedEditStates[id],
-                "Repair SubCategory": e.target.value,
-              };
-              setEditStates(updatedEditStates);
-            }}
-          >
-            {categoriesAndSubcategories[category]?.map((name, index) => (
-              <MenuItem key={index} value={name}>
-                {name}
-              </MenuItem>
-            ))}
-          </Select>
-        );
-      },
-    },
-    {
-      field: "Assigned To Dashboard",
-      headerName: "Assigned To",
-      width: 200,
-      editable: true,
-      renderCell: (params) => {
-        return <div>{params.value}</div>;
-      },
-      renderEditCell: (params) => {
-        const id = params.id;
-        return (
-          <Select
-            value={editStates[id]?.["Assigned To Dashboard"] || params.value || ""}
-            onChange={(e) => {
-              const updatedEditStates = { ...editStates };
-              updatedEditStates[id] = {
-                ...updatedEditStates[id],
-                "Assigned To Dashboard": e.target.value,
-              };
-              setEditStates(updatedEditStates);
-            }}
-          >
-            {data.users.map((name, index) => (
-              <MenuItem key={index} value={name}>
-                {name}
-              </MenuItem>
-            ))}
-          </Select>
-        );
-      },
-    },
-    {
-      field: "Service Provider",
-      headerName: "Service Provider",
-      width: 200,
-      editable: true,
-      renderCell: (params) => {
-        return <div>{params.value}</div>;
-      },
-      renderEditCell: (params) => {
-        const id = params.id;
-        const selectedState = editStates[id]?.["State"];
-
-        // Filtra los proveedores según el estado seleccionado
-        const filteredProviders = data.providers.filter(
-          provider => provider.State === selectedState
-        );
-
-        return (
-          <Select
-            value={editStates[id]?.["Service Provider"] || params.value || ""}
-            onChange={(e) => {
-              const selectedProvider = e.target.value;
-              const providerData = data.providers.find(provider => provider["Service Provider"] === selectedProvider);
-              const phoneNumber = providerData ? providerData['Phone Number'] : "";
-
-              const updatedEditStates = { ...editStates };
-              updatedEditStates[id] = {
-                ...updatedEditStates[id],
-                "Service Provider": selectedProvider,
-                "Phone Number": phoneNumber  // Actualizar el número de teléfono aquí
-              };
-              setEditStates(updatedEditStates);
-            }}
-
-          >
-            {filteredProviders.map((provider, index) => (
-              <MenuItem key={index} value={provider["Service Provider"]}>
-                {provider["Service Provider"]}  {/* Aquí está la corrección */}
-              </MenuItem>
-            ))}
-          </Select>
-        );
-      },
-    },
-    {
-      field: "Phone Number",
-      headerName: "Phone Number",
-      width: 200,
-      editable: false, // Esto asegura que la columna no sea editable
-      valueGetter: (params) => {
-        // Suponiendo que el array data.providers tiene una propiedad phoneNumber para cada proveedor
-        const selectedProvider = params.row["Service Provider"];
-        const providerData = data.providers.find(provider => provider["Service Provider"] === selectedProvider);
-        return providerData ? providerData['Phone Number'] : ""; // Devuelve el número de teléfono o una cadena vacía si no se encuentra
-      },
-      renderCell: (params) => {
-        return <div>{params.value}</div>;
-      },
-    },
-
-    {
-      field: "ETA",
-      headerName: "ETA",
-      width: 200,
-      editable: true,
-      renderEditCell: (params) => {
-        const id = params.id;
-        const value = editStates[id]?.["ETA"] || params.value || "";
-
-        return (
-          <Select
-            value={editStates[id]?.["ETA"] || selectedETA} // Use selectedETA as the value
-            onChange={(e) => {
-              const newValue = e.target.value;
-              const updatedEditStates = { ...editStates };
-              updatedEditStates[id] = {
-                ...updatedEditStates[id],
-                ETA: newValue,
-              };
-              setEditStates(updatedEditStates);
-
-              // Update the selectedETA state
-              setSelectedETA(newValue);
-            }}
-          >
-            <MenuItem value="< 30 min">{'<'} 30 min</MenuItem>
-            <MenuItem value="30 min">30 min</MenuItem>
-            <MenuItem value="45 min">45 min</MenuItem>
-            <MenuItem value="1 hour">1 hour</MenuItem>
-            <MenuItem value="1.5 hours">1.5 hours</MenuItem>
-            <MenuItem value="> 1.5 Hours">{">"} 1.5 Hours</MenuItem>
-          </Select>
-        );
-      },
-    },
-    {
-      field: "On-Location",
-      headerName: "On-Location",
-      width: 200,
-      editable: true,
-      renderEditCell: (params) => {
-        const id = params.id;
-        const value = editStates[id]?.["On-Location"] || params.value || "";
-
-        return (
-          <Select
-            value={value}
-            onChange={(e) => {
-              const updatedEditStates = { ...editStates };
-              updatedEditStates[id] = {
-                ...updatedEditStates[id],
-                "On-Location": e.target.value,
-              };
-              setEditStates(updatedEditStates);
-            }}
-          >
-            <MenuItem value="Arrived">Arrived</MenuItem>
-          </Select>
-        );
-      },
-    },
-    {
-      field: "Complete",
-      headerName: "Complete",
-      width: 200,
-      editable: true,
-      renderEditCell: (params) => {
-        const id = params.id;
-        const value = editStates[id]?.["Complete"] || params.value || "";
-
-        return (
-          <Select
-            value={value}
-            onChange={(e) => {
-              const updatedEditStates = { ...editStates };
-              updatedEditStates[id] = {
-                ...updatedEditStates[id],
-                Complete: e.target.value,
-              };
-              setEditStates(updatedEditStates);
-            }}
-          >
-            <MenuItem value="Yes">Yes</MenuItem>
-            <MenuItem value="No">No</MenuItem>
-          </Select>
-        );
-      },
-    } ,
-    {
-      field: "Total",
-      headerName: "Total",
-      width: 200,
-      editable: true,
-      renderEditCell: (params) => {
-        const id = params.id;
-        const value = editStates[id]?.["Total"] || params.value || "";
-
-        return (
-          <CustomTextFieldEditor
-            id={id}
-            value={value}
-            onChange={(id, newValue) => {
-              const updatedEditStates = { ...editStates };
-              updatedEditStates[id] = {
-                ...updatedEditStates[id],
-                Total: newValue,
-              };
-              setEditStates(updatedEditStates);
-            }}
-          />
-        );
-      },
-    },
-    {
-      field: "Status",
-      headerName: "Status",
-      width: 200,
-      editable: false,
-      renderEditCell: (params) => {
-        const id = params.id;
-        const value = editStates[id]?.["Status"] || params.value || "";
-
-        return (
-          <Select
-            value={value}
-            onChange={(e) => {
-              const updatedEditStates = { ...editStates };
-              updatedEditStates[id] = {
-                ...updatedEditStates[id],
-                "Status": e.target.value,
-              };
-              setEditStates(updatedEditStates);
-            }}
-          >
-          </Select>
-        );
-      },
-    },
-    {
-      field: "actions",
-      type: "actions",
-      headerName: "Actions",
-      width: 100,
-      getActions: ({ id }) => {
-        const isInEditMode = rowModesModel[id]?.mode === GridRowModes.Edit;
-
-        if (isInEditMode) {
-          return [
-            <GridActionsCellItem
-              icon={<SaveIcon />}
-              label="Save"
-              onClick={handleSaveClick(id)}
-            />,
-          ];
-        }
-
-        return [
-          <GridActionsCellItem
-            icon={<EditIcon />}
-            label="Edit"
-            onClick={handleEditClick(id)}
-          />,
-        ];
-      },
-    },
+    { name: "ROADSIDE_IN_PROGRESS", label: "Roadside In-Progress" },
   ];
 
+  const columnsToShow = columnsByStage[currentStage];
+
+  const handleStageChange = async (newStage) => {
+    const editingRowId = Object.keys(rowModesModel).find(
+      (id) => rowModesModel[id].mode === "edit"
+    );
+
+    if (editingRowId) {
+      const editingRow = filteredData.find(
+        (row) => row.rowIndex === Number(editingRowId)
+      );
+      if (editingRow) {
+        await processRowUpdate(editingRow, editingRow);
+      }
+    }
+
+    setCurrentStage(newStage);
+  };
+
+  const handleProcessRowUpdate = async (newRow) => {
+    const oldRow = filteredData.find((row) => row.rowIndex === newRow.rowIndex);
+  
+    try {
+      const updatedRow = await processRowUpdate(newRow, oldRow);
+      return updatedRow;
+    } catch (error) {
+      console.error("Error actualizando la fila:", error);
+      return oldRow;
+    }
+  };
+
+  const handleGridKeyDown = async (event) => {
+    console.log(event)
+    if (event.key === 'Enter') {
+      const editingRowId = Object.keys(rowModesModel).find(
+        (id) => rowModesModel[id].mode === "edit"
+      );
+        
+      console.log("editingRowId" + editingRowId)
+      if (editingRowId) {
+        const editingRow = filteredData.find(
+          (row) => row.rowIndex === Number(editingRowId)
+        );
+        console.log("editingRow" + editingRow)
+
+        if (editingRow) {
+          await processRowUpdate(editingRow, editingRow);
+        }
+      }
+    }
+  }
+
+
   return (
-    <div className="px-4 sm:px-6 lg:px-8">
-      <div className="my-4 flex justify-between px-2">
-        <div className="flex"></div>
-        <div className="m-1">Total: {filteredData.length}</div>
+    <div className="px-4 sm:px-6 lg:px-8 ">
+      <div className="my-4 flex flex-col sm:flex-row justify-between px-2">
+        <div className="flex flex-wrap gap-2 sm:gap-4 sm:space-x-0  border-teal-500 pb-2 sm:pb-0 lg:space-x-16">
+          {stages.map((stage) => (
+            <button
+              key={stage.name}
+              onClick={() => handleStageChange(stage.name)}
+              className={`py-2 px-4 text-teal-500 hover:text-teal-800 font-semibold ${
+                currentStage === stage.name
+                  ? "border-b-2 -mb-px border-teal-500"
+                  : ""
+              }`}
+            >
+              {stage.label}
+            </button>
+          ))}
+        </div>
+        <div className="mt-2 sm:mt-0">Total: {filteredData.length}</div>
       </div>
-      <div className="mt-8 flow-root">
-        <div className="-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
-          <div className="inline-block min-w-full py-2 align-middle sm:px-6 lg:px-8">
-            <div className="overflow-hidden shadow ring-1 ring-black ring-opacity-5 sm:rounded-lg">
-              <DataGrid
-                key={gridKey}
-                rows={filteredData}
-                getRowId={(row) => row.rowIndex}
-                columns={columns}
-                pageSize={5}
-                rowsPerPageOptions={[5]}
-                disableSelectionOnClick
-                editMode="row"
-                rowModesModel={rowModesModel}
-                onRowModesModelChange={(newModel) => setRowModesModel(newModel)}
-              />
-            </div>
+
+      <div className="mt-8">
+        <div className="overflow-x-auto shadow-md sm:rounded-lg">
+          <div className="inline-block min-w-full align-middle">
+            <DataGrid
+              rows={filteredData}
+              getRowId={(row) => row.rowIndex}
+              columns={columnsToShow}
+              pageSize={5}
+              rowsPerPageOptions={[5]}
+              key={updateKey}
+              disableSelectionOnClick
+              editMode="row"
+              rowModesModel={rowModesModel}
+              onKeyDown={handleGridKeyDown}
+              processRowUpdate={handleProcessRowUpdate}
+              onProcessRowUpdateError={(error) => {
+                console.error(
+                  "Se produjo un error al procesar la actualización de la fila",
+                  error
+                );
+              }}
+              onRowModesModelChange={(newModel) => setRowModesModel(newModel)}
+              className="bg-white p-4 rounded-lg"
+              sx={{
+                boxShadow: 2,
+                ".MuiDataGrid-columnHeaders": {
+                  backgroundColor: "rgba(255, 255, 255, 0.8)",
+                  color: "#333",
+                },
+                ".MuiDataGrid-cell": {
+                  borderBottom: "1px solid #e5e7eb",
+                },
+              }}
+            />
           </div>
         </div>
       </div>

@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import TextField from "@mui/material/TextField";
 
-const CustomTextFieldEditor = ({ id, value, onChange }) => {
+const CustomTextFieldEditor = ({ id, value, onChange, onKeyDown  }) => {
   // Utiliza un estado local para manejar el valor del campo de texto
   const [localValue, setLocalValue] = useState(value);
 
@@ -16,11 +16,22 @@ const CustomTextFieldEditor = ({ id, value, onChange }) => {
     onChange(id, localValue);
   };
 
+  const handleKeyDown = (e) => {
+    if (onKeyDown) {
+      onKeyDown(e);
+    }
+    if (e.key === 'Enter') {
+      onChange(id, localValue);
+    }
+  };
+
+
   return (
     <TextField
       value={localValue}
       onChange={handleInputChange}
       onBlur={handleBlur}
+      onKeyDown={handleKeyDown}
     />
   );
 };
