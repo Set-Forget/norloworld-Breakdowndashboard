@@ -75,7 +75,7 @@ export default function FilteredTable() {
   if (loading || typeLoading) return <Spinner />;
 
   const processRowUpdate = async (newRow, oldRow) => {
-    if (newRow.Total && newRow.Total.startsWith("$")) {
+    if (newRow.Total && toString(newRow.Total).startsWith("$")) {
       newRow.Total = newRow.Total.substring(1);
     }
 
