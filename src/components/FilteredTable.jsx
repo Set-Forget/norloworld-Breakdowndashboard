@@ -187,7 +187,7 @@ export default function FilteredTable() {
           const id = params.id;
           return (
             <Select
-              value={editStates[id]?.["Driver Name"] || params.value || ""}
+            value={editStates[id]?.["Driver Name"] || params.value || ""}
               onChange={(e) => {
                 const updatedEditStates = { ...editStates };
                 updatedEditStates[id] = {
@@ -404,6 +404,7 @@ export default function FilteredTable() {
                 updatedEditStates[id] = {
                   ...updatedEditStates[id],
                   "Repair Category": e.target.value,
+                  "Repair SubCategory": "",
                 };
                 setEditStates(updatedEditStates);
 
@@ -756,7 +757,7 @@ export default function FilteredTable() {
 
   const handleProcessRowUpdate = async (newRow) => {
     const oldRow = filteredData.find((row) => row.rowIndex === newRow.rowIndex);
-  
+
     try {
       const updatedRow = await processRowUpdate(newRow, oldRow);
       return updatedRow;
@@ -767,26 +768,25 @@ export default function FilteredTable() {
   };
 
   const handleGridKeyDown = async (event) => {
-    console.log(event)
-    if (event.key === 'Enter') {
+    console.log(event);
+    if (event.key === "Enter") {
       const editingRowId = Object.keys(rowModesModel).find(
         (id) => rowModesModel[id].mode === "edit"
       );
-        
-      console.log("editingRowId" + editingRowId)
+
+      console.log("editingRowId" + editingRowId);
       if (editingRowId) {
         const editingRow = filteredData.find(
           (row) => row.rowIndex === Number(editingRowId)
         );
-        console.log("editingRow" + editingRow)
+        console.log("editingRow" + editingRow);
 
         if (editingRow) {
           await processRowUpdate(editingRow, editingRow);
         }
       }
     }
-  }
-
+  };
 
   return (
     <div className="px-4 sm:px-6 lg:px-8 ">
