@@ -48,6 +48,8 @@ export default function FilteredTable() {
   const [selectedSubcategory, setSelectedSubcategory] = useState("");
   const [updateKey, setUpdateKey] = useState(0);
 
+  
+
   useEffect(() => {
     if (filteredData && filteredData.length > 0) {
       console.log("Usando datos del contexto global");
@@ -501,7 +503,7 @@ export default function FilteredTable() {
         },
         renderEditCell: (params) => {
           const id = params.id;
-          const selectedState = editStates[id]?.["State"];
+          const selectedState = editStates[id]?.["State"] || params.row.State;;
 
           // Filtra los proveedores según el estado seleccionado
           const filteredProviders = data.providers.filter(

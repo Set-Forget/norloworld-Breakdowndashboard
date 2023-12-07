@@ -68,6 +68,8 @@ export default function providers() {
     const [phoneNumberError, setPhoneNumberError] = useState(false);
     const [selectedState, setSelectedState] = useState("");
     const [filteredProviders, setFilteredProviders] = useState([]);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
 
     useEffect(() => {
         if (data && data.providers) {
@@ -236,8 +238,9 @@ export default function providers() {
         } else {
             setPhoneNumberError(false);
         }
-    
+
         if (formData.provider && formData.state && formData.city && formData.phoneNumber) {
+            setIsSubmitting(true);
             executePostCreate({
                 data: JSON.stringify(formData),
             })
@@ -249,8 +252,9 @@ export default function providers() {
                             city: '',
                             phoneNumber: '',
                         });
-    
+
                         toast.success("Provider Added");
+                        setIsSubmitting(false);
                         setModalOpen(false);
                     } else {
                         toast.error("Error");
@@ -259,6 +263,7 @@ export default function providers() {
                 .catch(() => {
                     toast.error("Error");
                 });
+
         }
     };
 
@@ -288,87 +293,95 @@ export default function providers() {
                     <div className="mb-2 flex justify-center">
                         <DialogTitle>Add Provider</DialogTitle>
                     </div>
-                    <DialogContent>
-                        <form>
-                            <div className="mb-4">
-                                <TextField
-                                    required
-                                    error={providerError}
-                                    helperText={providerError ? providerErrorText : ''}
-                                    name="provider"
-                                    label="Provider"
-                                    value={formData.provider}
-                                    onChange={handleFormChange}
-                                    color="success"
-                                    InputLabelProps={{
-                                        shrink: true,
-                                    }}
-                                />
-                            </div>
-                            <div className="mb-4">
-                                <div style={{ width: '100%' }}>
-                                    <Select
+                    {isSubmitting ? (
+                        <div className="spinner-container" style={{ width: '100%', height: '300px' }}>
+                            <Spinner />
+                        </div>
+                    ) : (
+                        <DialogContent>
+                            <form>
+                                <div className="mb-4">
+                                    <TextField
                                         required
-                                        error={stateError}
-                                        helperText={stateError ? stateErrorText : ''}
-                                        name="state"
-                                        value={formData.state}
+                                        error={providerError}
+                                        helperText={providerError ? providerErrorText : ''}
+                                        name="provider"
+                                        label="Provider"
+                                        value={formData.provider}
                                         onChange={handleFormChange}
                                         color="success"
-                                        displayEmpty
-                                        inputProps={{ 'aria-label': 'Without label' }}
-                                        fullWidth  // Esto hará que el Select ocupe todo el ancho disponible
-                                    >
-                                        <MenuItem value="" disabled>
-                                            Select State
-                                        </MenuItem>
-                                        {data.states.map((state, i) => (
-                                            <MenuItem key={i} value={state}>
-                                                {state}
-                                            </MenuItem>
-                                        ))}
-                                    </Select>
+                                        InputLabelProps={{
+                                            shrink: true,
+                                        }}
+                                    />
                                 </div>
+                                <div className="mb-4">
+                                    <div style={{ width: '100%' }}>
+                                        <Select
+                                            required
+                                            error={stateError}
+                                            helperText={stateError ? stateErrorText : ''}
+                                            name="state"
+                                            value={formData.state}
+                                            onChange={handleFormChange}
+                                            color="success"
+                                            displayEmpty
+                                            inputProps={{ 'aria-label': 'Without label' }}
+                                            fullWidth  // Esto hará que el Select ocupe todo el ancho disponible
+                                        >
+                                            <MenuItem value="" disabled>
+                                                Select State
+                                            </MenuItem>
+                                            {data.states.map((state, i) => (
+                                                <MenuItem key={i} value={state}>
+                                                    {state}
+                                                </MenuItem>
+                                            ))}
+                                        </Select>
+                                    </div>
 
-                            </div>
-                            <div className="mb-4">
-                                <TextField
-                                    required
-                                    error={cityError}
-                                    helperText={cityError ? cityErrorText : ''}
-                                    name="city"
-                                    label="City"
-                                    value={formData.city}
-                                    onChange={handleFormChange}
-                                    color="success"
-                                    InputLabelProps={{
-                                        shrink: true,
-                                    }}
-                                />
-                            </div>
-                            <div className="mb-4">
-                                <TextField
-                                    required
-                                    error={phoneNumberError}
-                                    helperText={phoneNumberError ? phoneNumberErrorText : ''}
-                                    name="phoneNumber"
-                                    label="Phone Number"
-                                    value={formData.phoneNumber}
-                                    onChange={handleFormChange}
-                                    color="success"
-                                    InputLabelProps={{
-                                        shrink: true,
-                                    }}
+                                </div>
+                                <div className="mb-4">
+                                    <TextField
+                                        required
+                                        error={cityError}
+                                        helperText={cityError ? cityErrorText : ''}
+                                        name="city"
+                                        label="City"
+                                        value={formData.city}
+                                        onChange={handleFormChange}
+                                        color="success"
+                                        InputLabelProps={{
+                                            shrink: true,
+                                        }}
+                                    />
+                                </div>
+                                <div className="mb-4">
+                                    <TextField
+                                        required
+                                        error={phoneNumberError}
+                                        helperText={phoneNumberError ? phoneNumberErrorText : ''}
+                                        name="phoneNumber"
+                                        label="Phone Number"
+                                        value={formData.phoneNumber}
+                                        onChange={handleFormChange}
+                                        color="success"
+                                        InputLabelProps={{
+                                            shrink: true,
+                                        }}
 
-                                />
-                            </div>
-                            <div className="text-center"> {/* Centro el botón */}
-                                <Button onClick={handleSubmit} variant="contained" color="success">
-                                    Add
-                                </Button>
-                            </div>
-                        </form>
-                    </DialogContent>
+                                    />
+                                </div>
+                                <div className="text-center"> {/* Centro el botón */}
+
+                                    <Button onClick={handleSubmit} variant="contained" color="success">
+                                        Add
+                                    </Button>
+
+                                </div>
+                            </form>
+                        </DialogContent>
+                    )}
                 </Dialog>
 
             </div>
