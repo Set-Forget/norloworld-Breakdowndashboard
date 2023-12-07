@@ -236,19 +236,20 @@ export default function providers() {
         } else {
             setPhoneNumberError(false);
         }
-
-        if (!formData.provider || !formData.state || !formData.city || !formData.phoneNumber) {
-            return;
-        } else {
+    
+        if (formData.provider && formData.state && formData.city && formData.phoneNumber) {
             executePostCreate({
                 data: JSON.stringify(formData),
             })
                 .then((response) => {
                     if (response.status === 200) {
-                        formData.provider = "";
-                        formData.state = "";
-                        formData.city = "";
-                        formData.phoneNumber = "";
+                        setFormData({
+                            provider: '',
+                            state: '',
+                            city: '',
+                            phoneNumber: '',
+                        });
+    
                         toast.success("Provider Added");
                         setModalOpen(false);
                     } else {
