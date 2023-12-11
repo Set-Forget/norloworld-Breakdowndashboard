@@ -404,37 +404,6 @@ export default function FilteredTable() {
         },
       },
       {
-        field: "State",
-        headerName: "State",
-        width: 100,
-        editable: true,
-        renderCell: (params) => {
-          return <div>{params.value}</div>;
-        },
-        renderEditCell: (params) => {
-          const id = params.id;
-          return (
-            <Select
-              value={editStates[id]?.["State"] || params.value || ""}
-              onChange={(e) => {
-                const updatedEditStates = { ...editStates };
-                updatedEditStates[id] = {
-                  ...updatedEditStates[id],
-                  State: e.target.value,
-                };
-                setEditStates(updatedEditStates);
-              }}
-            >
-              {data.states.map((name, index) => (
-                <MenuItem key={index} value={name}>
-                  {name}
-                </MenuItem>
-              ))}
-            </Select>
-          );
-        },
-      },
-      {
         field: "Repair Needed",
         headerName: "Repair Needed",
         width: 200,
@@ -587,6 +556,37 @@ export default function FilteredTable() {
               }}
             >
               {data.drivers.map((name, index) => (
+                <MenuItem key={index} value={name}>
+                  {name}
+                </MenuItem>
+              ))}
+            </Select>
+          );
+        },
+      },
+      {
+        field: "State",
+        headerName: "State",
+        width: 100,
+        editable: true,
+        renderCell: (params) => {
+          return <div>{params.value}</div>;
+        },
+        renderEditCell: (params) => {
+          const id = params.id;
+          return (
+            <Select
+              value={editStates[id]?.["State"] || params.value || ""}
+              onChange={(e) => {
+                const updatedEditStates = { ...editStates };
+                updatedEditStates[id] = {
+                  ...updatedEditStates[id],
+                  State: e.target.value,
+                };
+                setEditStates(updatedEditStates);
+              }}
+            >
+              {data.states.map((name, index) => (
                 <MenuItem key={index} value={name}>
                   {name}
                 </MenuItem>
