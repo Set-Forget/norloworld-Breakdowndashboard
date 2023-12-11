@@ -373,7 +373,7 @@ export default function FilteredTable() {
         field: "Driver Name",
         headerName: "Driver Name",
         width: 200,
-        editable: false,
+        editable: true,
         renderHeader: (params) => (
           <strong>{params.colDef.headerName}</strong>
         ),
@@ -395,6 +395,37 @@ export default function FilteredTable() {
               }}
             >
               {data.drivers.map((name, index) => (
+                <MenuItem key={index} value={name}>
+                  {name}
+                </MenuItem>
+              ))}
+            </Select>
+          );
+        },
+      },
+      {
+        field: "State",
+        headerName: "State",
+        width: 100,
+        editable: true,
+        renderCell: (params) => {
+          return <div>{params.value}</div>;
+        },
+        renderEditCell: (params) => {
+          const id = params.id;
+          return (
+            <Select
+              value={editStates[id]?.["State"] || params.value || ""}
+              onChange={(e) => {
+                const updatedEditStates = { ...editStates };
+                updatedEditStates[id] = {
+                  ...updatedEditStates[id],
+                  State: e.target.value,
+                };
+                setEditStates(updatedEditStates);
+              }}
+            >
+              {data.states.map((name, index) => (
                 <MenuItem key={index} value={name}>
                   {name}
                 </MenuItem>
@@ -629,7 +660,6 @@ export default function FilteredTable() {
           return <div>{params.value}</div>;
         },
       },
-
       {
         field: "ETA",
         headerName: "ETA",
