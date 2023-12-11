@@ -182,14 +182,17 @@ export default function FilteredTable() {
         headerName: "Driver Name",
         width: 200,
         editable: true,
+        renderHeader: (params) => (
+          <strong>{params.colDef.headerName}</strong>
+        ),
         renderCell: (params) => {
-          return <div>{params.value}</div>;
+          return <div style={{ fontWeight: 'bold' }}>{params.value}</div>;
         },
         renderEditCell: (params) => {
           const id = params.id;
           return (
             <Select
-            value={editStates[id]?.["Driver Name"] || params.value || ""}
+              value={editStates[id]?.["Driver Name"] || params.value || ""}
               onChange={(e) => {
                 const updatedEditStates = { ...editStates };
                 updatedEditStates[id] = {
@@ -367,6 +370,40 @@ export default function FilteredTable() {
     ],
     DIAGNOSTICS_TROUBLESHOOTING: [
       {
+        field: "Driver Name",
+        headerName: "Driver Name",
+        width: 200,
+        editable: false,
+        renderHeader: (params) => (
+          <strong>{params.colDef.headerName}</strong>
+        ),
+        renderCell: (params) => {
+          return <div style={{ fontWeight: 'bold' }}>{params.value}</div>;
+        },
+        renderEditCell: (params) => {
+          const id = params.id;
+          return (
+            <Select
+              value={editStates[id]?.["Driver Name"] || params.value || ""}
+              onChange={(e) => {
+                const updatedEditStates = { ...editStates };
+                updatedEditStates[id] = {
+                  ...updatedEditStates[id],
+                  "Driver Name": e.target.value,
+                };
+                setEditStates(updatedEditStates);
+              }}
+            >
+              {data.drivers.map((name, index) => (
+                <MenuItem key={index} value={name}>
+                  {name}
+                </MenuItem>
+              ))}
+            </Select>
+          );
+        },
+      },
+      {
         field: "Repair Needed",
         headerName: "Repair Needed",
         width: 200,
@@ -493,6 +530,40 @@ export default function FilteredTable() {
       },
     ],
     ROADSIDE_IN_PROGRESS: [
+      {
+        field: "Driver Name",
+        headerName: "Driver Name",
+        width: 200,
+        editable: true,
+        renderHeader: (params) => (
+          <strong>{params.colDef.headerName}</strong>
+        ),
+        renderCell: (params) => {
+          return <div style={{ fontWeight: 'bold' }}>{params.value}</div>;
+        },
+        renderEditCell: (params) => {
+          const id = params.id;
+          return (
+            <Select
+              value={editStates[id]?.["Driver Name"] || params.value || ""}
+              onChange={(e) => {
+                const updatedEditStates = { ...editStates };
+                updatedEditStates[id] = {
+                  ...updatedEditStates[id],
+                  "Driver Name": e.target.value,
+                };
+                setEditStates(updatedEditStates);
+              }}
+            >
+              {data.drivers.map((name, index) => (
+                <MenuItem key={index} value={name}>
+                  {name}
+                </MenuItem>
+              ))}
+            </Select>
+          );
+        },
+      },
       {
         field: "Service Provider",
         headerName: "Service Provider",
