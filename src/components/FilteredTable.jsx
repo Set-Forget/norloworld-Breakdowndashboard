@@ -36,10 +36,13 @@ export default function FilteredTable() {
     setCategoriesAndSubcategories,
   } = useFilteredData();
   const [rowModesModel, setRowModesModel] = useState({});
+  const [updatingRow, setUpdatingRow] = useState(false);
 
   const [selectedETA, setSelectedETA] = useState("");
 
   const [editStates, setEditStates] = useState({});
+
+  const [isEditingRow, setIsEditingRow] = useState(false);
 
   const [currentStage, setCurrentStage] = useState(
     "ROADSIDE_SERVICE_REQUESTED"
@@ -47,8 +50,6 @@ export default function FilteredTable() {
   const [selectedCategory, setSelectedCategory] = useState("");
   const [selectedSubcategory, setSelectedSubcategory] = useState("");
   const [updateKey, setUpdateKey] = useState(0);
-
-  
 
   useEffect(() => {
     if (filteredData && filteredData.length > 0) {
@@ -81,10 +82,19 @@ export default function FilteredTable() {
       newRow.Total = newRow.Total.substring(1);
     }
 
+    if (updatingRow) {
+      console.log("Una actualización está en curso. Por favor, espera.");
+      return;
+    }
+
+    setUpdatingRow(true);
+
     const updatedRow = {
       ...newRow,
       ...(editStates[newRow.rowIndex] || {}),
     };
+
+    console.log(editStates);
 
     const body = {
       breakdownDate: updatedRow["BreakDown Date"],
@@ -106,13 +116,14 @@ export default function FilteredTable() {
       rowIndex: updatedRow.rowIndex,
       ETA: updatedRow["ETA"],
       onLocation: updatedRow["On-Location"],
-      complete: updatedRow["Complete"],
     };
 
     try {
+      console.log("por hacer post", body);
       await executePost({
         data: JSON.stringify(body),
       });
+      console.log("post hecho");
 
       setFilteredData((currentFilteredData) => {
         const newData = currentFilteredData.map((row) =>
@@ -124,8 +135,11 @@ export default function FilteredTable() {
       });
 
       setUpdateKey((prevKey) => prevKey + 1);
+      console.log(prevKey);
+      setUpdatingRow(false);
     } catch (error) {
       console.error("Error actualizando la fila:", error);
+      setUpdatingRow(false);
       return oldRow;
     }
 
@@ -182,11 +196,9 @@ export default function FilteredTable() {
         headerName: "Driver Name",
         width: 200,
         editable: true,
-        renderHeader: (params) => (
-          <strong>{params.colDef.headerName}</strong>
-        ),
+        renderHeader: (params) => <strong>{params.colDef.headerName}</strong>,
         renderCell: (params) => {
-          return <div style={{ fontWeight: 'bold' }}>{params.value}</div>;
+          return <div style={{ fontWeight: "bold" }}>{params.value}</div>;
         },
         renderEditCell: (params) => {
           const id = params.id;
@@ -374,11 +386,9 @@ export default function FilteredTable() {
         headerName: "Driver Name",
         width: 200,
         editable: true,
-        renderHeader: (params) => (
-          <strong>{params.colDef.headerName}</strong>
-        ),
+        renderHeader: (params) => <strong>{params.colDef.headerName}</strong>,
         renderCell: (params) => {
-          return <div style={{ fontWeight: 'bold' }}>{params.value}</div>;
+          return <div style={{ fontWeight: "bold" }}>{params.value}</div>;
         },
         renderEditCell: (params) => {
           const id = params.id;
@@ -535,11 +545,9 @@ export default function FilteredTable() {
         headerName: "Driver Name",
         width: 200,
         editable: true,
-        renderHeader: (params) => (
-          <strong>{params.colDef.headerName}</strong>
-        ),
+        renderHeader: (params) => <strong>{params.colDef.headerName}</strong>,
         renderCell: (params) => {
-          return <div style={{ fontWeight: 'bold' }}>{params.value}</div>;
+          return <div style={{ fontWeight: "bold" }}>{params.value}</div>;
         },
         renderEditCell: (params) => {
           const id = params.id;
@@ -605,7 +613,7 @@ export default function FilteredTable() {
         },
         renderEditCell: (params) => {
           const id = params.id;
-          const selectedState = editStates[id]?.["State"] || params.row.State;;
+          const selectedState = editStates[id]?.["State"] || params.row.State;
 
           // Filtra los proveedores según el estado seleccionado
           const filteredProviders = data.providers.filter(
@@ -722,33 +730,6 @@ export default function FilteredTable() {
         },
       },
       {
-        field: "Complete",
-        headerName: "Complete",
-        width: 100,
-        editable: true,
-        renderEditCell: (params) => {
-          const id = params.id;
-          const value = editStates[id]?.["Complete"] || params.value || "";
-
-          return (
-            <Select
-              value={value}
-              onChange={(e) => {
-                const updatedEditStates = { ...editStates };
-                updatedEditStates[id] = {
-                  ...updatedEditStates[id],
-                  Complete: e.target.value,
-                };
-                setEditStates(updatedEditStates);
-              }}
-            >
-              <MenuItem value="Yes">Yes</MenuItem>
-              <MenuItem value="No">No</MenuItem>
-            </Select>
-          );
-        },
-      },
-      {
         field: "Total",
         headerName: "Total",
         width: 120,
@@ -800,33 +781,6 @@ export default function FilteredTable() {
           );
         },
       },
-      // {
-      //   field: "actions",
-      //   type: "actions",
-      //   headerName: "Actions",
-      //   width: 100,
-      //   getActions: ({ id }) => {
-      //     const isInEditMode = rowModesModel[id]?.mode === GridRowModes.Edit;
-
-      //     if (isInEditMode) {
-      //       return [
-      //         <GridActionsCellItem
-      //           icon={<SaveIcon />}
-      //           label="Save"
-      //           onClick={handleSaveClick(id)}
-      //         />,
-      //       ];
-      //     }
-
-      //     return [
-      //       <GridActionsCellItem
-      //         icon={<EditIcon />}
-      //         label="Edit"
-      //         onClick={handleEditClick(id)}
-      //       />,
-      //     ];
-      //   },
-      // },
     ],
   };
 
@@ -850,12 +804,21 @@ export default function FilteredTable() {
       const editingRow = filteredData.find(
         (row) => row.rowIndex === Number(editingRowId)
       );
+
       if (editingRow) {
+        setIsEditingRow(true);
+
         await processRowUpdate(editingRow, editingRow);
       }
+
+      const newModel = { ...rowModesModel };
+      newModel[editingRowId] = { mode: "view" };
+      setRowModesModel(newModel);
+      setIsEditingRow(true);
     }
 
     setCurrentStage(newStage);
+    setIsEditingRow(false);
   };
 
   const handleProcessRowUpdate = async (newRow) => {
@@ -949,6 +912,15 @@ export default function FilteredTable() {
           </div>
         </div>
       </div>
+      <div className="px-4 sm:px-6 lg:px-8 ">
+    {isEditingRow && (
+      <div className="fixed top-0 left-0 z-50 w-full h-full bg-gray-900 bg-opacity-50 flex items-center justify-center">
+        <Spinner className="text-green-500" />
+      </div>
+    )}
+      </div>
+
     </div>
+    
   );
 }
