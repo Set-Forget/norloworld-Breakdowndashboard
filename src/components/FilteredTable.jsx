@@ -47,8 +47,7 @@ export default function FilteredTable() {
   const [currentStage, setCurrentStage] = useState(
     "ROADSIDE_SERVICE_REQUESTED"
   );
-  const [selectedCategory, setSelectedCategory] = useState("");
-  const [selectedSubcategory, setSelectedSubcategory] = useState("");
+
   const [updateKey, setUpdateKey] = useState(0);
 
   useEffect(() => {
@@ -104,7 +103,6 @@ export default function FilteredTable() {
       driverName: updatedRow["Driver Name"],
       repairCategory: updatedRow["Repair Category"],
       repairNeeded: updatedRow["Repair Needed"],
-      repairSubCategory: updatedRow["Repair SubCategory"],
       serviceProvider: updatedRow["Service Provider"],
       phoneNumber: updatedRow["Phone Number"],
       state: updatedRow.State,
@@ -453,12 +451,9 @@ export default function FilteredTable() {
                 updatedEditStates[id] = {
                   ...updatedEditStates[id],
                   "Repair Category": e.target.value,
-                  "Repair SubCategory": "",
                 };
                 setEditStates(updatedEditStates);
 
-                // Actualizar las subcategorías cuando cambia la categoría
-                setSelectedSubcategory("");
               }}
             >
               {Object.keys(categoriesAndSubcategories).map(
@@ -468,39 +463,6 @@ export default function FilteredTable() {
                   </MenuItem>
                 )
               )}
-            </Select>
-          );
-        },
-      },
-      {
-        field: "Repair SubCategory",
-        headerName: "Repair Subcategory",
-        width: 200,
-        editable: true,
-        renderEditCell: (params) => {
-          const id = params.id;
-          const category =
-            editStates[id]?.["Repair Category"] || selectedCategory;
-
-          return (
-            <Select
-              value={
-                editStates[id]?.["Repair SubCategory"] || selectedSubcategory
-              }
-              onChange={(e) => {
-                const updatedEditStates = { ...editStates };
-                updatedEditStates[id] = {
-                  ...updatedEditStates[id],
-                  "Repair SubCategory": e.target.value,
-                };
-                setEditStates(updatedEditStates);
-              }}
-            >
-              {categoriesAndSubcategories[category]?.map((name, index) => (
-                <MenuItem key={index} value={name}>
-                  {name}
-                </MenuItem>
-              ))}
             </Select>
           );
         },
