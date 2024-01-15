@@ -353,6 +353,36 @@ export default function FilteredTable() {
         },
       },
       {
+        field: "File Attachment",
+        headerName: "File Attachment",
+        width: 120,
+        editable: false,
+        renderCell: (params) => {
+          const attachments = params.value ? params.value.split("\n") : [];
+          return (
+            <>
+              {attachments.map((attachment, index, array) => (
+                <span key={index}>
+                  <a
+                    href={attachment.trim()}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    File {index + 1}
+                  </a>
+                  {index < array.length - 1 && <span style={{ margin: '0 5px' }}>,</span>}
+                </span>
+              ))}
+            </>
+          );
+        },
+        renderEditCell: (params) => {
+          const id = params.id;
+          const value = editStates[id]?.["File Attachment"] || params.value || "";
+          return <CustomTextFieldEditor id={id} value={value} />;
+        },
+      },      
+      {
         field: "Description",
         headerName: "Description",
         width: 150,
