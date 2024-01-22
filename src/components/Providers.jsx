@@ -13,7 +13,7 @@ import { Dialog, DialogTitle, DialogContent, TextField, Button, Select, MenuItem
 
 
 const endPoint =
-    "https://script.google.com/macros/s/AKfycbx5AAww6De17U5lkbTr2xCV8h6eXps0BWoZR5vb_cZyBj9JmunsuP9yAESMZm6rHJDSHg/exec";
+    "https://script.google.com/macros/s/AKfycbxzXcy6hYtoXqDLfHwKCjx4L1iMg3jB0Hu8x2TrUqYAvAmvUXkuDDypCE0wdyneSBNk/exec";
 
 export default function providers() {
     const [{ data, loading, error }] = useAxios(
