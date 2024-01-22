@@ -1,0 +1,6 @@
+{
+    "rewrites": [
+      { "source": "/norloworld-Breakdowndashboard/(.*)", "destination": "/norloworld-Breakdowndashboard/index.html" }
+    ]
+  }
+  
