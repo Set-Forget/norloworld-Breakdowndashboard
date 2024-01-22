@@ -131,9 +131,11 @@ export default function FilteredTable() {
         console.log("newData after update", newData);
         return newData;
       });
+      if (updateKey) {
+        setUpdateKey((prevKey) => prevKey + 1);
+        console.log(prevKey);
+      }
 
-      setUpdateKey((prevKey) => prevKey + 1);
-      console.log(prevKey);
       setUpdatingRow(false);
     } catch (error) {
       console.error("Error actualizando la fila:", error);
@@ -363,14 +365,12 @@ export default function FilteredTable() {
             <>
               {attachments.map((attachment, index, array) => (
                 <span key={index}>
-                  <a
-                    href={attachment.trim()}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
+                  <a href={attachment.trim()} target="_blank" rel="noreferrer">
                     File {index + 1}
                   </a>
-                  {index < array.length - 1 && <span style={{ margin: '0 5px' }}>,</span>}
+                  {index < array.length - 1 && (
+                    <span style={{ margin: "0 5px" }}>,</span>
+                  )}
                 </span>
               ))}
             </>
@@ -378,10 +378,11 @@ export default function FilteredTable() {
         },
         renderEditCell: (params) => {
           const id = params.id;
-          const value = editStates[id]?.["File Attachment"] || params.value || "";
+          const value =
+            editStates[id]?.["File Attachment"] || params.value || "";
           return <CustomTextFieldEditor id={id} value={value} />;
         },
-      },      
+      },
       {
         field: "Description",
         headerName: "Description",
@@ -483,7 +484,6 @@ export default function FilteredTable() {
                   "Repair Category": e.target.value,
                 };
                 setEditStates(updatedEditStates);
-
               }}
             >
               {Object.keys(categoriesAndSubcategories).map(
@@ -905,14 +905,12 @@ export default function FilteredTable() {
         </div>
       </div>
       <div className="px-4 sm:px-6 lg:px-8 ">
-    {isEditingRow && (
-      <div className="fixed top-0 left-0 z-50 w-full h-full bg-gray-900 bg-opacity-50 flex items-center justify-center">
-        <Spinner className="text-green-500" />
+        {isEditingRow && (
+          <div className="fixed top-0 left-0 z-50 w-full h-full bg-gray-900 bg-opacity-50 flex items-center justify-center">
+            <Spinner className="text-green-500" />
+          </div>
+        )}
       </div>
-    )}
-      </div>
-
     </div>
-    
   );
 }
