@@ -7,7 +7,6 @@ import {
   Route,
   Link,
   Routes,
-  HashRouter,
   useLocation,
 } from "react-router-dom";
 import { FilteredDataProvider } from "./components/BreakdownsContext";
@@ -243,10 +242,10 @@ function MainContent() {
 
 export default function App() {
   return (
-    <HashRouter>
+    <Router>
       <FilteredDataProvider>
         <MainContent />
       </FilteredDataProvider>
-    </HashRouter>
+    </Router>
   );
 }
