@@ -691,6 +691,9 @@ export default function FilteredTable() {
               <MenuItem value="1 hour">1 hour</MenuItem>
               <MenuItem value="1.5 hours">1.5 hours</MenuItem>
               <MenuItem value="> 1.5 Hours">{">"} 1.5 Hours</MenuItem>
+              <MenuItem value="Route to nearest service provider ETA 30 min">Route to nearest service provider ETA 30 min</MenuItem>
+              <MenuItem value="Route to nearest service provider ETA 1 hour">Route to nearest service provider ETA 1 hour</MenuItem>
+
             </Select>
           );
         },
